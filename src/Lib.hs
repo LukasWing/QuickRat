@@ -26,7 +26,8 @@ data MyBool = MyTrue | MyFalse deriving (Show)
 
 
 instance Arbitrary MyBool where
-    arbitrary = oneof [return MyTrue, return MyFalse]
+    arbitrary = frequency 
+        [(4,return MyTrue), (1,return MyFalse)]
 
 {-
 inst arbibtrry
