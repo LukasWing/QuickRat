@@ -39,12 +39,12 @@ instance Arbitrary MyList where
         where linearFunction a b =  MyList (map (\x -> a * x + b) [-10..10])
               p a b = max (a * b + 1) 1
 
-{-
-inst arbitrary
-do x<- 
-recurse
-peel off
--}
+data MyNested = MyNested {description::String, content::MyList} deriving (Show)
+
+instance Arbitrary MyNested where
+    arbitrary = f <*> arbitrary
+        where f = fmap MyNested arbitrary
+
 
 someFunc :: IO ()
 someFunc = do
@@ -53,4 +53,5 @@ someFunc = do
     quickCheck prop_gcdIs1For17TinyInt
     sample (arbitrary::Gen MyBool) 
     sample (arbitrary::Gen MyList) 
+    sample (arbitrary::Gen MyNested)
 
