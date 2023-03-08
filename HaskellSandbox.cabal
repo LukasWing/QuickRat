@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      StrLib
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:

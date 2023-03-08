@@ -2,6 +2,15 @@ module Lib
     ( someFunc
     ) where
 import Test.QuickCheck
+    ( choose,
+      frequency,
+      sample,
+      (==>),
+      forAll,
+      quickCheck,
+      Arbitrary(arbitrary),
+      Gen,
+      Property )
 import Rattus
 import Rattus.Stream (Str)
 
@@ -42,8 +51,11 @@ instance Arbitrary MyList where
 data MyNested = MyNested {description::String, content::MyList} deriving (Show)
 
 instance Arbitrary MyNested where
-    arbitrary = f <*> arbitrary
-        where f = fmap MyNested arbitrary
+    arbitrary = do
+        aString <- arbitrary
+        aMyList <- arbitrary
+        return MyNested {description=aString, content=aMyList}
+
 
 
 someFunc :: IO ()
@@ -54,4 +66,6 @@ someFunc = do
     sample (arbitrary::Gen MyBool) 
     sample (arbitrary::Gen MyList) 
     sample (arbitrary::Gen MyNested)
+    print MyNested {description="1", content=MyList[1,2]}
+
 

@@ -1,6 +1,9 @@
 module Main (main) where
 
 import Lib
+import StrLib
 
 main :: IO ()
-main = someFunc
+main = do
+    -- someFunc
+    mainStr
