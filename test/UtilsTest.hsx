@@ -1,0 +1,29 @@
+module UtilsTest(
+    mainStr
+) where
+import StrLib 
+import Test.QuickCheck  
+
+prop_intConstStreamsAreEqual :: Int -> Bool
+prop_intConstStreamsAreEqual n =
+    ArbitraryStr (makeMyConstStr n) =~= ArbitraryStr (makeMyConstStr n)
+
+-- Gives up. Needs generator tuning.
+prop_headEqualIfAlmostEqual :: ArbitraryStr -> ArbitraryStr -> Property
+prop_headEqualIfAlmostEqual as1 as2 =
+        as1 =~= as2 ==> arbitraryStrHead as1 == arbitraryStrHead as2
+       
+
+testAlmostEq :: IO ()
+testAlmostEq = do
+    print $ ArbitraryStr makeConstStr =~= ArbitraryStr makeConstStr
+    quickCheck prop_intConstStreamsAreEqual
+    quickCheck prop_headEqualIfAlmostEqual
+
+mainStr :: IO ()
+mainStr = do
+    -- print $ getHead5 makeConstStr
+    num <- generate (arbitrary::Gen ArbitraryStr)
+    print num
+    testAlmostEq    
+    putStrLn "mainStr Done"

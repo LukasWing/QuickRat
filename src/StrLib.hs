@@ -1,10 +1,18 @@
-module StrLib (mainStr, getHead, constStr) where
+module StrLib (
+    getHead, 
+    constStr, 
+    makeMyConstStr, 
+    makeConstStr,
+    showStr, 
+    strTake,
+    ArbitraryStr,
+    arbitraryStrHead,
+) where
 
 import Test.QuickCheck
 import Rattus.Stream (Str ((:::)))
 import Rattus (delay)
 import Rattus.Primitives (adv)
-import Test.QuickCheck.Test (test)
 
 constStr :: t -> Str t
 constStr v = v ::: delay (constStr v)
@@ -40,6 +48,7 @@ getHead5Int = getHead5Int' 5 []
                     
 arbitraryStrHead :: ArbitraryStr -> Int
 arbitraryStrHead as = getHead $ unArbitraryStr as
+
 newtype ArbitraryStr = ArbitraryStr {unArbitraryStr :: Str Int}
 
 
@@ -59,29 +68,6 @@ class AlmostEq a where
 instance AlmostEq ArbitraryStr where
     stream1 =~= stream2 = getHead5Int stream1 == getHead5Int stream2
 
-prop_intConstStreamsAreEqual :: Int -> Bool
-prop_intConstStreamsAreEqual n =
-    ArbitraryStr (makeMyConstStr n) =~= ArbitraryStr (makeMyConstStr n)
-
--- Gives up. Needs generator tuning.
-prop_headEqualIfAlmostEqual :: ArbitraryStr -> ArbitraryStr -> Property
-prop_headEqualIfAlmostEqual as1 as2 =
-        as1 =~= as2 ==> arbitraryStrHead as1 == arbitraryStrHead as2
-       
-
-testAlmostEq :: IO ()
-testAlmostEq = do
-    print $ ArbitraryStr makeConstStr =~= ArbitraryStr makeConstStr
-    quickCheck prop_intConstStreamsAreEqual
-    quickCheck prop_headEqualIfAlmostEqual
-
-mainStr :: IO ()
-mainStr = do
-    -- print $ getHead5 makeConstStr
-    num <- generate (arbitrary::Gen ArbitraryStr)
-    print num
-    testAlmostEq    
-    putStrLn "mainStr Done"
 
 
 

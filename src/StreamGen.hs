@@ -4,7 +4,6 @@ module StreamGen (
     constQStr,
     qStrHead,
     almostEqual,
-    smoke,
 )
 where
 import Rattus.Stream (Str ((:::)))
@@ -29,7 +28,7 @@ instance (Show a) => Show (QStr a) where
 instance (Eq a) => AlmostEq (QStr a) where
     stream1 =~= stream2 = qStrTake 100 stream1 == qStrTake 100 stream2
 
---fix:
+--fix for above:
 almostEqual :: Eq a => QStr a -> QStr a -> Bool
 stream1 `almostEqual` stream2 = qStrTake 100 stream1 == qStrTake 100 stream2
 
@@ -49,6 +48,3 @@ qStrHead aQStr = getHead' aStr
 
 constQStr :: a -> QStr a
 constQStr v = QStr $ v ::: delay ( unQStr (constQStr v))
-
-smoke :: String
-smoke = "Yup it is smoking"
