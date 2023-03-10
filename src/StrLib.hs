@@ -1,4 +1,4 @@
-module StrLib (mainStr) where
+module StrLib (mainStr, getHead, constStr) where
 
 import Test.QuickCheck
 import Rattus.Stream (Str ((:::)))
