@@ -4,25 +4,30 @@ import Test.QuickCheck
 import Rattus.Stream (Str ((:::)))
 import Rattus (delay)
 import Rattus.Primitives (adv)
-import Data.Text.Internal.Fusion (stream)
 import Test.QuickCheck.Test (test)
+
+constStr :: t -> Str t
+constStr v = v ::: delay (constStr v)
+
+getHead ::Str a -> a
+getHead (h:::_) = h
+
+
+strTake :: (Ord t, Num t) => t -> Str a -> [a]
+strTake n = strTake' n [] 
+        where strTake' picksLeft accumulator (head:::tail) =
+                if picksLeft > 0 
+                    then strTake' (picksLeft - 1) (head:accumulator) (adv tail) 
+                    else reverse accumulator
+
+showStr :: Show a => Str a -> String
+showStr aStr = show $ strTake 5 aStr
+
 makeConstStr :: Str Int
 makeConstStr = 5 ::: delay makeConstStr
 
 makeMyConstStr :: Int -> Str Int
 makeMyConstStr n = n ::: delay (makeMyConstStr n)
-
-getHead ::Str a -> a
-getHead aStr = getHead' aStr
-        where getHead' (head:::_) = head
-
-getHead5 :: Str a -> [a]
-getHead5 aStr = getHead5' 5 [] aStr
-        where getHead5' picksLeft accumulator (head:::tail) =
-                if picksLeft > 0 then getHead5' (picksLeft - 1) (head:accumulator) (adv tail) else accumulator
-
--- getHead5Int :: ArbitraryStr -> 
--- getHead5Int :: ArbitraryStr -> [Int]
 
 getHead5Int :: ArbitraryStr -> [Int]
 getHead5Int = getHead5Int' 5 []
@@ -32,6 +37,7 @@ getHead5Int = getHead5Int' 5 []
                 if picksLeft > 0
                     then getHead5Int' (picksLeft - 1) (h1:accumulator) rest
                     else reverse accumulator
+                    
 arbitraryStrHead :: ArbitraryStr -> Int
 arbitraryStrHead as = getHead $ unArbitraryStr as
 newtype ArbitraryStr = ArbitraryStr {unArbitraryStr :: Str Int}
@@ -40,8 +46,8 @@ newtype ArbitraryStr = ArbitraryStr {unArbitraryStr :: Str Int}
 instance Arbitrary ArbitraryStr where
     arbitrary = do
         x <- arbitrary:: Gen Int
-        xs <- (arbitrary:: Gen ArbitraryStr)
-        return (ArbitraryStr (x:::delay (unArbitraryStr xs)))
+        xs <- arbitrary:: Gen ArbitraryStr
+        return $ ArbitraryStr (x:::delay (unArbitraryStr xs))
 
 instance Show ArbitraryStr where
     show = show . getHead5Int
@@ -69,13 +75,9 @@ testAlmostEq = do
     quickCheck prop_intConstStreamsAreEqual
     quickCheck prop_headEqualIfAlmostEqual
 
-
-
-
-
 mainStr :: IO ()
 mainStr = do
-    print $ getHead5 makeConstStr
+    -- print $ getHead5 makeConstStr
     num <- generate (arbitrary::Gen ArbitraryStr)
     print num
     testAlmostEq    

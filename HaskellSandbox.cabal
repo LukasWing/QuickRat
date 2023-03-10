@@ -26,6 +26,7 @@ source-repository head
 library
   exposed-modules:
       Lib
+      StreamGen
       StrLib
   other-modules:
       Paths_HaskellSandbox
@@ -62,6 +63,7 @@ test-suite HaskellSandbox-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      StreamGenTest
       Paths_HaskellSandbox
   hs-source-dirs:
       test
