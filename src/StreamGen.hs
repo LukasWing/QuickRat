@@ -1,14 +1,16 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module StreamGen (
     qStrTake,
     QStr,
     constQStr,
     qStrHead,
-    almostEqual,
+    AlmostEq(..),
 )
 where
 import Rattus.Stream (Str ((:::)))
 import Rattus (delay)
 import Rattus.Primitives (adv)
+import Test.QuickCheck
 
 newtype QStr a = QStr {unQStr::Str a}
 
@@ -16,11 +18,11 @@ class AlmostEq a where
     (=~=) :: a -> a -> Bool
 
 
--- instance (Arbitrary a) => Arbitrary (QStr a) where
---     arbitrary = do
---         x <- arbitrary::Gen a
---         xs <- (arbitrary::Gen (QStr a))
---         return $ QStr (x:::delay (unQStr xs))
+instance (Arbitrary a) => Arbitrary (QStr a) where
+    arbitrary = do
+        x <- arbitrary::Gen a
+        xs <- (arbitrary::Gen (QStr a))
+        return $ QStr (x:::delay (unQStr xs))
 
 instance (Show a) => Show (QStr a) where
     show = show . qStrTake 5

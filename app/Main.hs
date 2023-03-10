@@ -1,10 +1,12 @@
 module Main (main) where
 
-import Lib
-import StrLib
+import PlayArea (run)
+
+import StrUtils 
 import ArbitraryStr as A
+
 
 main :: IO ()
 main = do
-    -- someFunc
+    run
     A.mainStr

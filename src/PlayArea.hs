@@ -1,18 +1,10 @@
-module Lib
-    ( someFunc
+module PlayArea
+    ( run
     ) where
+
 import Test.QuickCheck
-    ( choose,
-      frequency,
-      sample,
-      (==>),
-      forAll,
-      quickCheck,
-      Arbitrary(arbitrary),
-      Gen,
-      Property )
-import Rattus
-import Rattus.Stream (Str)
+import Control.Monad.Writer 
+import StreamGen
 
 gcd' ::  Int -> Int -> Int
 gcd' a b
@@ -56,16 +48,44 @@ instance Arbitrary MyNested where
         aMyList <- arbitrary
         return MyNested {description=aString, content=aMyList}
 
+quicksort' [] = []
+quicksort' (p:xs) =
+    let smaller =  filter (< p) xs
+        larger =  filter (>= p) xs
+    in quicksort' smaller ++ [p] ++ quicksort' larger
 
+testSort sorter = 
+    let isSorted (x1:x2:xs) = x1 <= x2 && isSorted (x2:xs)
+        isSorted _ = True 
+    in all (isSorted . sorter) [[],[1],[1,2],[2,1],[-1,1]]
 
-someFunc :: IO ()
-someFunc = do
+logNumber :: Int -> Writer [String] Int 
+logNumber x = writer (x, ["Got number: " ++ show x])
+
+multWithLog :: Writer [String] Int 
+multWithLog = do 
+    a <- logNumber 3
+    b <- logNumber 5
+    return (a*b)
+
+myRev :: [Int] -> [Int] 
+myRev = foldl (\reverseList element -> element:reverseList) [] 
+
+run :: IO ()
+run = do
+    quickCheck (\x -> fromIntegral (x::Int) < 100)
+    quickCheck (\xs -> reverse xs == myRev xs)
+    print $ runWriter multWithLog
     putStrLn "myFuncs"
     quickCheck prop_positive    
     quickCheck prop_gcdIs1For17TinyInt
     sample (arbitrary::Gen MyBool) 
     sample (arbitrary::Gen MyList) 
     sample (arbitrary::Gen MyNested)
-    print MyNested {description="1", content=MyList[1,2]}
+    -- print MyNested {description="1", content=MyList[1,2]}
+    -- sample (scale (*33) (arbitrary:: Gen (QStr Int)))
+    sample (arbitrary:: Gen (QStr (Int,String)))
+
+  
 
 

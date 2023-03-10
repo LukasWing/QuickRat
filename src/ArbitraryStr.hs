@@ -6,7 +6,7 @@ import Test.QuickCheck
 import Rattus.Stream (Str ((:::)))
 import Rattus (delay)
 import Rattus.Primitives (adv)
-import StrLib (getHead, constStr)
+import StrUtils (getHead, constStr)
 
 newtype ArbitraryStr = ArbitraryStr {unArbitraryStr :: Str Int}
 
@@ -18,7 +18,6 @@ instance Arbitrary ArbitraryStr where
 
 instance Show ArbitraryStr where
     show = show . getHead5Int
-
 
 class AlmostEq a where
     (=~=) :: a -> a -> Bool
