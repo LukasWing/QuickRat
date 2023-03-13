@@ -1,6 +1,6 @@
-module PlayArea
-    ( run
-    ) where
+module PlayArea( 
+    run
+) where
 
 import Test.QuickCheck
 import Control.Monad.Writer 
@@ -84,7 +84,7 @@ run = do
     sample (arbitrary::Gen MyNested)
     -- print MyNested {description="1", content=MyList[1,2]}
     -- sample (scale (*33) (arbitrary:: Gen (QStr Int)))
-    sample (arbitrary:: Gen (QStr (Int,String)))
+    sample (arbitrary:: Gen (Str (Int,String)))
 
   
 

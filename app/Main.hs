@@ -1,7 +1,5 @@
 module Main (main) where
-
-import PlayArea (run)
-
+import PlayArea
 import StrUtils 
 import ArbitraryStr as A
 

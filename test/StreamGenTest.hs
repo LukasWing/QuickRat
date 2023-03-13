@@ -1,18 +1,16 @@
 module StreamGenTest (
     testStreamGen
-)
-where 
+) where 
 import StreamGen
-
-import Test.QuickCheck  
+import Test.QuickCheck 
 
 prop_constStreamsAreEqual :: Int -> Bool
 prop_constStreamsAreEqual v =
-    constQStr v =~= constQStr v 
+    constStr v =~= constStr v 
 
-prop_headEqualIfAlmostEqual :: QStr Int -> QStr Int -> Property
+prop_headEqualIfAlmostEqual :: Str Int -> Str Int -> Property
 prop_headEqualIfAlmostEqual as1 as2 =
-        as1 =~= as2 ==>  qStrTake 10 as1 == qStrTake 10 as1
+        as1 =~= as2 ==>  strTake 10 as1 == strTake 10 as1
         
 testStreamGen = do
     quickCheck prop_constStreamsAreEqual
