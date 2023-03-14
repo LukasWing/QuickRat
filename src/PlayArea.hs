@@ -1,5 +1,4 @@
-module PlayArea( 
-    run
+module PlayArea( run
 ) where
 
 import Test.QuickCheck

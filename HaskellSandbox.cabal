@@ -25,10 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      ArbitraryStr
       PlayArea
       StreamGen
-      StrUtils
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:

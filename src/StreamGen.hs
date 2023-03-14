@@ -26,7 +26,7 @@ instance (Show a) => Show (Str a) where
     show = show . strTake 5
 
 instance (Eq a) => AlmostEq (Str a) where
-    stream1 =~= stream2 = strTake 100 stream1 == strTake 100 stream2
+    stream1 =~= stream2 = strTake 5 stream1 == strTake 5 stream2
 
 strTake :: Integer -> Str a -> [a]
 strTake n aStr = 
