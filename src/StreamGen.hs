@@ -7,13 +7,15 @@ module StreamGen (
     strHead,
     AlmostEq(..),
     evenOddGen,
-    oddEvenGen
+    oddEven,
+    evenOdd
 )
 where
 import Rattus.Stream
 import Rattus
 import Rattus.Primitives
 import Test.QuickCheck
+import Test.QuickCheck.Gen (Gen(MkGen))
 
 class AlmostEq a where
     (=~=) :: a -> a -> Bool
@@ -32,11 +34,11 @@ instance (Eq a) => AlmostEq (Str a) where
 
 strTake :: Integer -> Str a -> [a]
 strTake n aStr =
-        let strTake' picksLeft accumulator (h:::t) =
-                if picksLeft > 0
-                    then strTake' (picksLeft - 1) (h:accumulator) (adv t)
-                    else reverse accumulator
-        in strTake' n [] aStr
+    let strTake' picksLeft accumulator (h:::t) =
+            if picksLeft > 0
+                then strTake' (picksLeft - 1) (h:accumulator) (adv t)
+                else reverse accumulator
+    in strTake' n [] aStr
 
 strHead :: Str a -> a
 strHead  (h:::_) = h
@@ -44,7 +46,22 @@ strHead  (h:::_) = h
 constStr :: a -> Str a
 constStr v = v ::: delay (constStr v)
 
-evenOddGen = arbitrary :: Gen (Str Int)
 
-oddEvenGen = arbitrary :: Gen (Str Int)
+-- class OddEvenGen where
+--     evenOddGen:: Int -> Str Int
+-- oddEvenGen = arbitrary :: Gen (Str Int)
+
+evenOddGen :: Stamage Int -> Str Int
+evenOddGen aStamage = gen aStamage ::: delay (evenOddGen (next aStamage (0:: Int)))
+
+data Stamage a = Stamage {
+    gen::a,
+    next:: a -> Stamage a
+}
+
+oddEven = Stamage {gen = 1::Int, next = \_ -> evenOdd}
+evenOdd = Stamage {gen = 2::Int, next = \_ -> oddEven}
+
+
+
 
