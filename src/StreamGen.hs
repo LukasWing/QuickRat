@@ -6,11 +6,13 @@ module StreamGen (
     constStr,
     strHead,
     AlmostEq(..),
+    evenOddGen,
+    oddEvenGen
 )
 where
 import Rattus.Stream
-import Rattus 
-import Rattus.Primitives 
+import Rattus
+import Rattus.Primitives
 import Test.QuickCheck
 
 class AlmostEq a where
@@ -29,10 +31,10 @@ instance (Eq a) => AlmostEq (Str a) where
     stream1 =~= stream2 = strTake 5 stream1 == strTake 5 stream2
 
 strTake :: Integer -> Str a -> [a]
-strTake n aStr = 
+strTake n aStr =
         let strTake' picksLeft accumulator (h:::t) =
-                if picksLeft > 0 
-                    then strTake' (picksLeft - 1) (h:accumulator) (adv t) 
+                if picksLeft > 0
+                    then strTake' (picksLeft - 1) (h:accumulator) (adv t)
                     else reverse accumulator
         in strTake' n [] aStr
 
@@ -41,3 +43,8 @@ strHead  (h:::_) = h
 
 constStr :: a -> Str a
 constStr v = v ::: delay (constStr v)
+
+evenOddGen = arbitrary :: Gen (Str Int)
+
+oddEvenGen = arbitrary :: Gen (Str Int)
+
