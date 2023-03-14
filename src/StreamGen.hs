@@ -64,13 +64,9 @@ data Stamage a = Stamage {
     next:: a -> Stamage a
 }
 
-oddGen = do 
-    x <- arbitrary::Gen Int 
-    return (x .|. 1)
+oddGen = (.|. 1) <$> arbitrary
 
-evenGen = do 
-    x <- arbitrary::Gen Int 
-    return $ x * 2
+evenGen = (*2) <$> arbitrary 
 
 oddEven = Stamage {gen = oddGen, next = \_ -> evenOdd}
 evenOdd = Stamage {gen = evenGen, next = \_ -> oddEven}
