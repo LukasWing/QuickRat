@@ -7,15 +7,18 @@ module StreamGen (
     strHead,
     AlmostEq(..),
     evenOddGen,
+    oddEvenGen,
     oddEven,
     evenOdd
+
 )
 where
 import Rattus.Stream
 import Rattus
 import Rattus.Primitives
-import Test.QuickCheck
+import Test.QuickCheck hiding ((.&.))
 import Test.QuickCheck.Gen (Gen(MkGen))
+import Data.Bits ( Bits((.&.), (.|.)) )
 
 class AlmostEq a where
     (=~=) :: a -> a -> Bool
@@ -51,16 +54,30 @@ constStr v = v ::: delay (constStr v)
 --     evenOddGen:: Int -> Str Int
 -- oddEvenGen = arbitrary :: Gen (Str Int)
 
-evenOddGen :: Stamage Int -> Str Int
-evenOddGen aStamage = gen aStamage ::: delay (evenOddGen (next aStamage (0:: Int)))
+stamageGen aStamage = do
+    v <- gen aStamage
+    t <- stamageGen (next aStamage (0::Int))
+    return $ v ::: delay t
 
 data Stamage a = Stamage {
-    gen::a,
+    gen::Gen a,
     next:: a -> Stamage a
 }
 
-oddEven = Stamage {gen = 1::Int, next = \_ -> evenOdd}
-evenOdd = Stamage {gen = 2::Int, next = \_ -> oddEven}
+oddGen = do 
+    x <- arbitrary::Gen Int 
+    return (x .|. 1)
+
+evenGen = do 
+    x <- arbitrary::Gen Int 
+    return $ x * 2
+
+oddEven = Stamage {gen = oddGen, next = \_ -> evenOdd}
+evenOdd = Stamage {gen = evenGen, next = \_ -> oddEven}
+
+oddEvenGen = stamageGen oddEven
+evenOddGen = stamageGen evenOdd
+
 
 
 

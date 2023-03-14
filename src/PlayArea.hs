@@ -84,8 +84,9 @@ run = do
     -- print MyNested {description="1", content=MyList[1,2]}
     -- sample (scale (*33) (arbitrary:: Gen (QStr Int)))
     sample (arbitrary:: Gen (Str (Int,String)))
-    print $ evenOddGen oddEven
-    print $ evenOddGen evenOdd
+    sample evenOddGen
+    sample oddEvenGen
+    -- print $ evenOddGen evenOdd
 
 
 
