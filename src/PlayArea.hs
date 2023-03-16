@@ -1,9 +1,21 @@
-module PlayArea( run
+{-# OPTIONS_GHC -Wno-missing-signatures #-}
+module PlayArea( 
+    run,
+    pop,
+    push,
+    Stack,
+    pop',
+    push'
+
 ) where
 
 import Test.QuickCheck
 import Control.Monad.Writer 
 import StreamGen
+import Data.Char (isUpper, isDigit, intToDigit)
+import System.Random
+import Data.Complex (imagPart)
+import Control.Monad.State
 
 gcd' ::  Int -> Int -> Int
 gcd' a b
@@ -70,8 +82,8 @@ multWithLog = do
 myRev :: [Int] -> [Int] 
 myRev = foldl (\reverseList element -> element:reverseList) [] 
 
-run :: IO ()
-run = do
+run1 :: IO ()
+run1 = do
     quickCheck (\x -> fromIntegral (x::Int) < 100)
     quickCheck (\xs -> reverse xs == myRev xs)
     print $ runWriter multWithLog
@@ -87,6 +99,59 @@ run = do
     sample evenOddGen
     sample oddEvenGen
     -- print $ evenOddGen evenOdd
+
+addStuff :: [Char] -> [Char]
+addStuff = do 
+    l <- length
+    a <- take (3 * l) . cycle
+    hasCap <- any isUpper
+    hasNum <- any isDigit
+    return $ a 
+        ++ ". Length is now: " 
+        ++ show (3*l) 
+        ++ show hasCap
+        ++ show hasNum
+
+twoCoins :: StdGen -> (Bool, Bool)
+twoCoins gen = 
+    let (c1, gen') = random gen
+        (c2, _) = random gen'
+    in (c1, c2)
+
+type Stack = [Int]
+
+pop :: Stack -> (Int, Stack)
+pop (h:newStack) = (h, newStack)
+pop [] = error "Nothing to pop"
+
+push ::  Int -> Stack -> ((), Stack)
+push newElement aStack = ((), newElement:aStack)
+
+pop' :: State Stack Int 
+pop' = state $ \(h:newStack) -> (h, newStack)
+
+push' :: Int -> State Stack ()
+push' newElement = state $ \aStack -> ((), newElement:aStack)
+
+
+stackManip:: Int -> State Stack Int
+stackManip anInt = do
+    push' anInt
+    push' 6
+    pop'
+
+run = do
+    print $ addStuff "Hey"
+    print $ twoCoins (mkStdGen 100) 
+    let (exp,_) = runState (stackManip 4) [7] 
+    print $ exp == 6
+
+
+    
+
+
+
+
 
 
 
