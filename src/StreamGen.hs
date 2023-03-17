@@ -77,20 +77,21 @@ increasingSM current = Stamage {
 increasingInts :: Gen (Str Int)
 increasingInts = stamageGen (increasingSM 0)
 
-uniqueIntStr :: Gen (Str Int)
-uniqueIntStr = stamageGen (uniqueSM (Set.empty :: Set.Set Int))
+uniqueStr :: (Arbitrary a, Ord a) => Gen (Str a)
+uniqueStr = stamageGen (uniqueSM Set.empty)
 
-uniqueSM ::  Set.Set Int -> Stamage Int
+uniqueSM ::  (Arbitrary a, Ord a) => Set.Set a -> Stamage a
 uniqueSM acc = Stamage {
-    gen = suchThat (arbitrary::Gen Int) (\n -> not (Set.member n acc)),
-    next = \newInt -> uniqueSM $ Set.insert newInt acc
+    gen = suchThat arbitrary (\n -> not (Set.member n acc)),
+    next = \e -> uniqueSM $ Set.insert e acc
 }
 
 
 run = do
     print "inc ints"
     sample increasingInts
-    sample uniqueIntStr
+    sample (uniqueStr::Gen (Str String))
+
 
 
 

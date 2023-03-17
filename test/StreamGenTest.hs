@@ -61,16 +61,15 @@ intsAreIncreasing (h1 ::: t1) =
     in isIncreasing h1 (adv t1) 20
 
 prop_isUnique :: Property 
-prop_isUnique = forAll uniqueIntStr intsAreUnique 
+prop_isUnique = forAll (uniqueStr::Gen (Str String)) areUnique 
 
-intsAreUnique :: Str Int -> Bool
-intsAreUnique _ = False
-
-
-
+-- Todo
+areUnique :: Str a -> Bool
+areUnique _ = False
 
 
-    
+
+
 
 return []
 runTests :: IO Bool
