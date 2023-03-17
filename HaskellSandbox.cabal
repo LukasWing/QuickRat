@@ -36,6 +36,7 @@ library
       QuickCheck
     , Rattus
     , base >=4.7 && <5
+    , containers
     , mtl
     , random
     , text
@@ -53,6 +54,7 @@ executable HaskellSandbox-exe
     , QuickCheck
     , Rattus
     , base >=4.7 && <5
+    , containers
     , mtl
     , random
     , text
@@ -72,6 +74,7 @@ test-suite HaskellSandbox-test
     , QuickCheck
     , Rattus
     , base >=4.7 && <5
+    , containers
     , mtl
     , random
     , text

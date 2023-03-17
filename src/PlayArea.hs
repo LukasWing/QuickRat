@@ -11,7 +11,7 @@ module PlayArea(
 
 import Test.QuickCheck
 import Control.Monad.Writer 
-import StreamGen
+import StreamGen hiding (run)
 import Data.Char (isUpper, isDigit, intToDigit)
 import System.Random
 import Data.Complex (imagPart)
@@ -95,7 +95,7 @@ run1 = do
     sample (arbitrary::Gen MyNested)
     -- print MyNested {description="1", content=MyList[1,2]}
     -- sample (scale (*33) (arbitrary:: Gen (QStr Int)))
-    sample (arbitrary:: Gen (Str (Int,String)))
+    -- sample (arbitrary:: Gen (Str (Int,String)))
     sample evenOddGen
     sample oddEvenGen
     -- print $ evenOddGen evenOdd

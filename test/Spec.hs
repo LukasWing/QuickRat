@@ -18,13 +18,13 @@ stackManip anInt = do
     push' anInt
     pop'
 
-
 prop_stackPushedIsPopped' anInt = 
     let (expectedInt, _) = runState (stackManip anInt) []
     in expectedInt == anInt
 
 return []
 runSpecTests = $quickCheckAll
+
 
 main :: IO ()
 main = do

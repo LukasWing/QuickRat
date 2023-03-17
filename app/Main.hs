@@ -1,6 +1,7 @@
 module Main (main) where
-import PlayArea
+import PlayArea as PA
+import StreamGen as SG
 
 main :: IO ()
 main = do
-    run
+    SG.run

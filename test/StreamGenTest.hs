@@ -49,6 +49,28 @@ alternatesOddEven (h ::: t) checksLeft =
     || odd h 
     && alternatesEvenOdd (adv t) checksLeft
 
+prop_isIncreasing :: Property
+prop_isIncreasing = forAll increasingInts intsAreIncreasing
+
+intsAreIncreasing :: Str Int -> Bool
+intsAreIncreasing (h1 ::: t1) = 
+    let isIncreasing e1 (e2 ::: t2) counter = 
+            counter == 0 
+            || (e1 <= e2) 
+            && isIncreasing e2 (adv t2) (counter - 1) 
+    in isIncreasing h1 (adv t1) 20
+
+prop_isUnique :: Property 
+prop_isUnique = forAll uniqueIntStr intsAreUnique 
+
+intsAreUnique :: Str Int -> Bool
+intsAreUnique _ = False
+
+
+
+
+
+    
 
 return []
 runTests :: IO Bool
