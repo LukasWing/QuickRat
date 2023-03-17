@@ -91,6 +91,7 @@ run = do
     print "inc ints"
     sample increasingInts
     sample (uniqueStr::Gen (Str String))
+    sample (uniqueStr::Gen (Str Int))
 
 
 
