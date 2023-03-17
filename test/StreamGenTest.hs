@@ -50,7 +50,7 @@ alternatesOddEven (h ::: t) checksLeft =
     && alternatesEvenOdd (adv t) checksLeft
 
 prop_isIncreasing :: Property
-prop_isIncreasing = forAll increasingInts areIncreasing
+prop_isIncreasing = forAll increasingNums areIncreasing
 
 areIncreasing :: (Ord a) => Str a -> Bool
 areIncreasing (h1 ::: t1) = 

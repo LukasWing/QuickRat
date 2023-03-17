@@ -66,7 +66,7 @@ evenOdd = Stamage {gen = evenGen, next = \_ -> oddEven}
 oddEvenGen = stamageGen oddEven
 evenOddGen = stamageGen evenOdd
 
-increasingSM :: Int -> Stamage Int
+increasingSM :: (Arbitrary a, Num a) => a -> Stamage a
 increasingSM current = Stamage {
     gen = do
         addend <- arbitrary
@@ -74,8 +74,8 @@ increasingSM current = Stamage {
     next = \prev' -> increasingSM (prev' + current)
 }
 
-increasingInts :: Gen (Str Int)
-increasingInts = stamageGen (increasingSM 0)
+increasingNums :: (Arbitrary a, Num a) => Gen (Str a)
+increasingNums = stamageGen (increasingSM 0)
 
 uniqueStr :: (Arbitrary a, Ord a) => Gen (Str a)
 uniqueStr = stamageGen (uniqueSM Set.empty)
@@ -89,7 +89,8 @@ uniqueSM acc = Stamage {
 
 run = do
     print "inc ints"
-    sample increasingInts
+    sample (increasingNums:: Gen (Str Int))
+    sample (increasingNums:: Gen (Str Float))
     sample (uniqueStr::Gen (Str String))
     sample (uniqueStr::Gen (Str Int))
 
