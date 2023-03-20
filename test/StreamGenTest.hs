@@ -3,7 +3,7 @@
 module StreamGenTest (
     runTests
 ) where
-import StreamGen 
+import StreamGen hiding (next)
 import Test.QuickCheck
 import Rattus.Stream
 import Rattus
@@ -34,42 +34,70 @@ prop_alternatesEvenOdd =
     forAll evenOddGen $ \aStr -> alternatesEvenOdd aStr 100
 
 prop_alternatesOddEven :: Property
-prop_alternatesOddEven = 
+prop_alternatesOddEven =
     forAll oddEvenGen $ \aStr -> alternatesOddEven aStr 100
 
 alternatesEvenOdd :: Str Int -> Int -> Bool
 alternatesEvenOdd (h ::: t) checksLeft =
     checksLeft == 0
-    || even h 
+    || even h
     && alternatesOddEven (adv t) (checksLeft - 1)
 
 alternatesOddEven :: Str Int -> Int -> Bool
 alternatesOddEven (h ::: t) checksLeft =
     checksLeft == 0
-    || odd h 
+    || odd h
     && alternatesEvenOdd (adv t) checksLeft
 
 prop_isIncreasing :: Property
 prop_isIncreasing = forAll (increasingNums:: Gen (Str Float)) areIncreasing
 
 areIncreasing :: (Ord a) => Str a -> Bool
-areIncreasing (h1 ::: t1) = 
+areIncreasing (h1 ::: t1) =
     let isIncreasing e1 (e2 ::: t2) checksLeft =
-            checksLeft == 0 
-            || (e1 <= e2) 
+            checksLeft == 0
+            || (e1 <= e2)
             && isIncreasing e2 (adv t2) (checksLeft - 1)
-        checks = 20
+        checks = (20::Int)
     in isIncreasing h1 (adv t1) checks
 
-prop_isUnique :: Property 
-prop_isUnique = forAll (uniqueStr::Gen (Str String)) areUnique 
+prop_isUnique :: Property
+prop_isUnique = forAll (uniqueStr::Gen (Str String)) areUnique
 
 -- Todo
 areUnique :: Str a -> Bool
 areUnique _ = True
 
 
+data Stamate a = Stamate {
+    check:: a -> Bool,
+    next:: a -> Stamate a
+}
 
+stamateRun :: Str a -> Stamate a -> Bool
+stamateRun aStr aStamate =
+    let stamateRun' (h:::t) aStamate' checksLeft =
+            checksLeft == 0
+            || check aStamate h
+            && stamateRun' (adv t) (next aStamate' h) (pred checksLeft)
+    in stamateRun' aStr aStamate 20
+
+
+isConstSM :: Eq a => Maybe a -> Stamate a
+isConstSM input = Stamate {
+    check = \value -> case input of
+                        Just val' -> val' == value
+                        Nothing -> True,
+    next = isConstSM . Just
+}
+
+
+isConstCheck :: (Eq a ) => Str a -> Bool
+isConstCheck aStr = stamateRun aStr (isConstSM Nothing)
+
+
+prop_isConst :: Property
+prop_isConst = forAll (constStrSM::Gen (Str (Int, Bool))) isConstCheck
 
 
 return []
