@@ -8,7 +8,6 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import qualified Data.Set as Set
-import Test.QuickCheck.Monadic (pre)
 
 prop_constStreamsAreEqual :: Int -> Bool
 prop_constStreamsAreEqual v =
@@ -64,33 +63,16 @@ areIncreasing (h1 ::: t1) =
     in isIncreasing h1 (adv t1) checks
 
 prop_isUnique :: Property
-prop_isUnique = forAll (uniqueStr::Gen (Str Int)) areUnique
+prop_isUnique = forAll (uniqueStr::Gen (Str (Int, Float))) areUnique
 
-areUnique :: Str Int -> Bool
-areUnique aStr = stamateRun' aStr $ isUniqueSM (Set.empty::Set.Set Int)
+areUnique :: (Ord a) => Str a -> Bool
+areUnique aStr = stamateRun aStr $ isUniqueSM (Set.empty::Set.Set a)
 
-
-data Stamate' = Stamate' {
-    check':: Int -> Bool,
-    next':: Int -> Stamate'
+isUniqueSM :: (Ord a) => Set.Set a -> Stamate a
+isUniqueSM aSet = Stamate {
+    check = \val -> not (Set.member val aSet),
+    next = \val -> isUniqueSM (Set.insert val aSet)
 }
-
-stamateRun' :: Str Int -> Stamate' -> Bool
-stamateRun' aStr aStamate' =
-    let srInner (h:::t) asInner checksLeft =
-            checksLeft == 0
-            || check' asInner h
-            && srInner (adv t) (next' asInner h) (pred checksLeft)
-        nChecks = 20
-    in srInner aStr aStamate' nChecks
-
-
-isUniqueSM :: Set.Set Int -> Stamate' 
-isUniqueSM aSet = Stamate' {
-    check' = \val -> not (Set.member val aSet),
-    next' = \val -> isUniqueSM (Set.insert val aSet)
-}
-
 
 data Stamate a = Stamate {
     check:: a -> Bool,
@@ -114,17 +96,11 @@ isConstSM input = Stamate {
     next = isConstSM . Just
 }
 
-isConstCheck :: (Eq a ) => Str a -> Bool
+isConstCheck :: (Eq a) => Str a -> Bool
 isConstCheck aStr = stamateRun aStr (isConstSM Nothing)
 
 prop_isConst :: Property
 prop_isConst = forAll (constStrSM::Gen (Str (Int, Bool))) isConstCheck
-
-
-
-
-
-
 
 return []
 runTests :: IO Bool
