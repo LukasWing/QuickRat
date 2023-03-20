@@ -6,8 +6,6 @@ import Test.QuickCheck
 import PlayArea 
 import Test.QuickCheck.Test 
 import Control.Monad.State
-import PlayArea (push')
-
 prop_stackPushedIsPopped anInt =
     let (_, newStack) = push anInt [] in
     let (expectedAnInt, _) = pop newStack in

@@ -96,14 +96,6 @@ constSM input = Stamage {
 constStrSM ::(Arbitrary a) =>  Gen (Str a)
 constStrSM = stamageGen (constSM Nothing)
 
-run = do
-    print "inc ints"
-    sample (increasingNums:: Gen (Str Int))
-    sample (increasingNums:: Gen (Str Float))
-    sample (uniqueStr::Gen (Str String))
-    sample (uniqueStr::Gen (Str Int))
-    sample (constStrSM:: Gen (Str Int))
-    sample (constStrSM:: Gen (Str (Bool, Float)))
 
 
 
