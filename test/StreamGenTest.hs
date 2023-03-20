@@ -50,15 +50,16 @@ alternatesOddEven (h ::: t) checksLeft =
     && alternatesEvenOdd (adv t) checksLeft
 
 prop_isIncreasing :: Property
-prop_isIncreasing = forAll increasingNums areIncreasing
+prop_isIncreasing = forAll (increasingNums:: Gen (Str Float)) areIncreasing
 
 areIncreasing :: (Ord a) => Str a -> Bool
 areIncreasing (h1 ::: t1) = 
-    let isIncreasing e1 (e2 ::: t2) counter = 
-            counter == 0 
+    let isIncreasing e1 (e2 ::: t2) checksLeft =
+            checksLeft == 0 
             || (e1 <= e2) 
-            && isIncreasing e2 (adv t2) (counter - 1) 
-    in isIncreasing h1 (adv t1) 20
+            && isIncreasing e2 (adv t2) (checksLeft - 1)
+        checks = 20
+    in isIncreasing h1 (adv t1) checks
 
 prop_isUnique :: Property 
 prop_isUnique = forAll (uniqueStr::Gen (Str String)) areUnique 

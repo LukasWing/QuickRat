@@ -10,6 +10,7 @@ import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
 import Data.Data (Data)
+import GHC.RTS.Flags (DebugFlags(stable))
 
 
 class AlmostEq a where
@@ -25,7 +26,7 @@ instance (Arbitrary a) => Arbitrary (Str a) where
 
 
 instance (Show a) => Show (Str a) where
-    show = show . strTake 20
+    show aStr =  "Str: " ++ (show . strTake 20) aStr
 
 instance (Eq a) => AlmostEq (Str a) where
     stream1 =~= stream2 = strTake 5 stream1 == strTake 5 stream2
@@ -82,10 +83,18 @@ uniqueStr = stamageGen (uniqueSM Set.empty)
 
 uniqueSM ::  (Arbitrary a, Ord a) => Set.Set a -> Stamage a
 uniqueSM acc = Stamage {
-    gen = suchThat arbitrary (\n -> not (Set.member n acc)),
+    gen = arbitrary `suchThat`  (\n -> not (Set.member n acc)),
     next = \e -> uniqueSM $ Set.insert e acc
 }
 
+constSM :: (Arbitrary a) => Maybe a -> Stamage a
+constSM input = Stamage {
+    gen = maybe arbitrary return input,
+    next = constSM . pure
+}
+
+constStrSM ::(Arbitrary a) =>  Gen (Str a)
+constStrSM = stamageGen (constSM Nothing)
 
 run = do
     print "inc ints"
@@ -93,6 +102,8 @@ run = do
     sample (increasingNums:: Gen (Str Float))
     sample (uniqueStr::Gen (Str String))
     sample (uniqueStr::Gen (Str Int))
+    sample (constStrSM:: Gen (Str Int))
+    sample (constStrSM:: Gen (Str (Bool, Float)))
 
 
 
