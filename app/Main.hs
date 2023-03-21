@@ -1,6 +1,6 @@
 module Main (main) where
 import PlayArea as PA
-import StreamGen as SG
+import Generators as G
 import Test.QuickCheck
 import Rattus.Stream
 
@@ -16,3 +16,4 @@ runSG = do
 main :: IO ()
 main = do
     runSG
+    PA.run

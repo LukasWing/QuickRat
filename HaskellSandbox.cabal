@@ -25,8 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      PlayArea
-      StreamGen
+      Generators
+      Helpers
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:
@@ -45,6 +45,7 @@ library
 executable HaskellSandbox-exe
   main-is: Main.hs
   other-modules:
+      PlayArea
       Paths_HaskellSandbox
   hs-source-dirs:
       app

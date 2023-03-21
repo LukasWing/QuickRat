@@ -3,7 +3,8 @@
 module StreamGenTest (
     runTests
 ) where
-import StreamGen hiding (next)
+import Generators hiding (next)
+import Helpers
 import Test.QuickCheck
 import Rattus.Stream
 import Rattus

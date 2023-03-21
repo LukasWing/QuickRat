@@ -1,17 +1,16 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
-module PlayArea( 
+module PlayArea(
     run,
     pop,
     push,
     Stack,
     pop',
     push'
-
 ) where
 
 import Test.QuickCheck
-import Control.Monad.Writer 
-import StreamGen hiding (run)
+import Control.Monad.Writer
+import Generators hiding (run)
 import Data.Char (isUpper, isDigit, intToDigit)
 import System.Random
 import Data.Complex (imagPart)
@@ -34,20 +33,20 @@ prop_positive :: Int -> Int -> Property
 prop_positive a b =
     (a > 0 && b > 0) ==> (gcd' a b > 0)
 
-data MyBool = MyTrue 
-            | MyFalse 
+data MyBool = MyTrue
+            | MyFalse
     deriving (Show)
 
 
 instance Arbitrary MyBool where
-    arbitrary = frequency 
+    arbitrary = frequency
         [(4, return MyTrue), (1, return MyFalse)]
 
-newtype MyList = MyList{getList :: [Int]} 
+newtype MyList = MyList{getList :: [Int]}
     deriving (Show)
 
 instance Arbitrary MyList where
-    arbitrary = frequency [(p a b, return (linearFunction a b)) | a <- [-10..10], b <- [0..10]] 
+    arbitrary = frequency [(p a b, return (linearFunction a b)) | a <- [-10..10], b <- [0..10]]
         where linearFunction a b =  MyList (map (\x -> a * x + b) [-10..10])
               p a b = max (a * b + 1) 1
 
@@ -65,22 +64,22 @@ quicksort' (p:xs) =
         larger =  filter (>= p) xs
     in quicksort' smaller ++ [p] ++ quicksort' larger
 
-testSort sorter = 
+testSort sorter =
     let isSorted (x1:x2:xs) = x1 <= x2 && isSorted (x2:xs)
-        isSorted _ = True 
+        isSorted _ = True
     in all (isSorted . sorter) [[],[1],[1,2],[2,1],[-1,1]]
 
-logNumber :: Int -> Writer [String] Int 
+logNumber :: Int -> Writer [String] Int
 logNumber x = writer (x, ["Got number: " ++ show x])
 
-multWithLog :: Writer [String] Int 
-multWithLog = do 
+multWithLog :: Writer [String] Int
+multWithLog = do
     a <- logNumber 3
     b <- logNumber 5
     return (a*b)
 
-myRev :: [Int] -> [Int] 
-myRev = foldl (\reverseList element -> element:reverseList) [] 
+myRev :: [Int] -> [Int]
+myRev = foldl (\reverseList element -> element:reverseList) []
 
 run1 :: IO ()
 run1 = do
@@ -88,10 +87,10 @@ run1 = do
     quickCheck (\xs -> reverse xs == myRev xs)
     print $ runWriter multWithLog
     putStrLn "myFuncs"
-    quickCheck prop_positive    
+    quickCheck prop_positive
     quickCheck prop_gcdIs1For17TinyInt
-    sample (arbitrary::Gen MyBool) 
-    sample (arbitrary::Gen MyList) 
+    sample (arbitrary::Gen MyBool)
+    sample (arbitrary::Gen MyList)
     sample (arbitrary::Gen MyNested)
     -- print MyNested {description="1", content=MyList[1,2]}
     -- sample (scale (*33) (arbitrary:: Gen (QStr Int)))
@@ -101,19 +100,19 @@ run1 = do
     -- print $ evenOddGen evenOdd
 
 addStuff :: [Char] -> [Char]
-addStuff = do 
+addStuff = do
     l <- length
     a <- take (3 * l) . cycle
     hasCap <- any isUpper
     hasNum <- any isDigit
-    return $ a 
-        ++ ". Length is now: " 
-        ++ show (3*l) 
+    return $ a
+        ++ ". Length is now: "
+        ++ show (3*l)
         ++ show hasCap
         ++ show hasNum
 
 twoCoins :: StdGen -> (Bool, Bool)
-twoCoins gen = 
+twoCoins gen =
     let (c1, gen') = random gen
         (c2, _) = random gen'
     in (c1, c2)
@@ -127,34 +126,53 @@ pop [] = error "Nothing to pop"
 push ::  Int -> Stack -> ((), Stack)
 push newElement aStack = ((), newElement:aStack)
 
-pop' :: State Stack Int 
+pop' :: State Stack Int
 pop' = state $ \(h:newStack) -> (h, newStack)
 
 push' :: Int -> State Stack ()
 push' newElement = state $ \aStack -> ((), newElement:aStack)
 
 
+
+-- data MDT a b = MDT {anA:: a, aB :: b}
+
+-- data TPred a where  
+--     SP :: MDT a Bool -> TPred a
+--     And :: TPred a -> TPred a -> TPred a
+--     Or :: TPred a -> TPred a -> TPred a
+
+prop_stackPushedIsPopped anInt =
+    let (_, newStack) = push anInt [] in
+    let (expectedAnInt, _) = pop newStack in
+    anInt == expectedAnInt  
+    
 stackManip:: Int -> State Stack Int
 stackManip anInt = do
     push' anInt
-    push' 6
     pop'
+
+prop_stackPushedIsPopped' anInt = 
+    let (expectedInt, _) = runState (stackManip anInt) []
+    in expectedInt == anInt
 
 run = do
     print $ addStuff "Hey"
-    print $ twoCoins (mkStdGen 100) 
-    let (exp,_) = runState (stackManip 4) [7] 
-    print $ exp == 6
-
-
-    
-
-
+    print $ twoCoins (mkStdGen 100)
+    let (exp,_) = runState (stackManip 4) [7]
+    quickCheck prop_stackPushedIsPopped
+    quickCheck prop_stackPushedIsPopped'
+    print "Done"
 
 
 
 
 
-  
+
+
+
+
+
+
+
 
 
