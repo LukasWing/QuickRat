@@ -2,7 +2,10 @@ module Main (main) where
 import PlayArea as PA
 import Generators as G
 import Test.QuickCheck
-import Rattus.Stream
+import Rattus.Stream hiding (map)
+import LTL
+import Helpers (constStr)
+
 
 runSG = do
     print "inc ints"
@@ -13,7 +16,15 @@ runSG = do
     sample (constStrSM:: Gen (Str Int))
     sample (constStrSM:: Gen (Str (Bool, Float)))
     
+runLTL = do 
+    print "LTL: ------"
+    let expr5 = SP (\_ -> constStr True)
+    let expr3 = And expr5 expr5
+    let expr4 = Not $ And expr5 expr5
+    print $ evalLTL expr5 (constStr True) 
+
 main :: IO ()
 main = do
     runSG
-    PA.run
+    runLTL
+    -- PA.run

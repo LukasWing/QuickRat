@@ -28,6 +28,7 @@ library
       Evaluators
       Generators
       Helpers
+      LTL
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:

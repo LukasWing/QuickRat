@@ -25,3 +25,4 @@ strHead  (h:::_) = h
 
 constStr :: a -> Str a
 constStr v = v ::: delay (constStr v)
+

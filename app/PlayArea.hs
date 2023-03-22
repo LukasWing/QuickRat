@@ -132,13 +132,6 @@ push' newElement = state $ \aStack -> ((), newElement:aStack)
 
 
 
--- data MDT a b = MDT {anA:: a, aB :: b}
-
--- data TPred a where  
---     SP :: MDT a Bool -> TPred a
---     And :: TPred a -> TPred a -> TPred a
---     Or :: TPred a -> TPred a -> TPred a
-
 prop_stackPushedIsPopped anInt =
     let (_, newStack) = push anInt [] in
     let (expectedAnInt, _) = pop newStack in
@@ -160,6 +153,7 @@ run = do
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     print "Done"
+    
 
 
 

@@ -47,6 +47,7 @@ isAlternatingSM expectEven = Stamate{
     next = \_ -> isAlternatingSM (not expectEven)
 }
 
+
 -- Testables ------------------------------------------------------------------
 
 areUnique :: (Ord a) => Str a -> Bool
@@ -69,3 +70,6 @@ alternatesEvenOdd aStr = stamateRun aStr (isAlternatingSM True)
 
 alternatesOddEven :: Integral a => Str a -> Bool
 alternatesOddEven aStr = stamateRun aStr (isAlternatingSM False)
+
+allTrue :: Str Bool -> Bool
+allTrue aStr = stamateRun aStr $ isConstSM (Just True)

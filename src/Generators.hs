@@ -66,7 +66,10 @@ constOf value = Stamage {
 }
 
 -- Stream Generators ----------------------------------------------------------
+oddEvenGen :: Gen (Str Int)
 oddEvenGen = stamageGen oddEven
+
+evenOddGen :: Gen (Str Int)
 evenOddGen = stamageGen evenOdd
 
 increasingNums :: (Arbitrary a, Num a) => Gen (Str a)
