@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Evaluators
       Generators
       Helpers
   other-modules:
@@ -65,7 +66,9 @@ test-suite HaskellSandbox-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
-      StreamGenTest
+      EvaluatorTest
+      GeneratorTest
+      HelpersTest
       Paths_HaskellSandbox
   hs-source-dirs:
       test

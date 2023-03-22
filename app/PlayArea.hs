@@ -7,13 +7,11 @@ module PlayArea(
     pop',
     push'
 ) where
-
 import Test.QuickCheck
 import Control.Monad.Writer
-import Generators hiding (run)
-import Data.Char (isUpper, isDigit, intToDigit)
+import Generators
+import Data.Char 
 import System.Random
-import Data.Complex (imagPart)
 import Control.Monad.State
 
 gcd' ::  Int -> Int -> Int

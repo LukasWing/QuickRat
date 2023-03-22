@@ -1,16 +1,19 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
 module Generators where
 import Helpers
-import Rattus.Stream
+import Rattus.Stream hiding (const)
 import Rattus
 import Rattus.Primitives
 import Test.QuickCheck hiding ((.&.))
 import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
-{- Fundations -------------------------------------------------------------}
+import System.Posix.Internals (statGetType)
+
+-- Foundations -------------------------------------------------------------
 instance (Arbitrary a) => Arbitrary (Str a) where
     arbitrary = do
         x <- arbitrary::Gen a
@@ -29,8 +32,7 @@ stamageGen aStamage = do
     return $ v ::: delay t
 
 
-{- State Machines ------------------------------------------------------------}
-
+-- State Machines ------------------------------------------------------------
 increasingSM :: (Arbitrary a, Num a) => a -> Stamage a
 increasingSM current = Stamage {
     gen = do
@@ -38,10 +40,12 @@ increasingSM current = Stamage {
         return (current + abs addend),
     next = \prev' -> increasingSM (prev' + current)
 }
--- evenGen =
--- oddGen = 
-oddEven = Stamage {gen = (.|. 1) <$> (arbitrary:: Gen Int), next = \_ -> evenOdd}
-evenOdd = Stamage {gen = (*2) <$> (arbitrary:: Gen Int), next = \_ -> oddEven}
+
+oddEven :: Stamage Int
+oddEven = Stamage {gen = (.|. 1) <$> (arbitrary:: Gen Int), next = const evenOdd}
+
+evenOdd :: Stamage Int
+evenOdd = Stamage {gen = (*2) <$> (arbitrary:: Gen Int), next = const oddEven}
 
 uniqueSM ::  (Arbitrary a, Ord a) => Set.Set a -> Stamage a
 uniqueSM acc = Stamage {
@@ -55,7 +59,13 @@ constSM input = Stamage {
     next = constSM . pure
 }
 
-{- Stream Generators ----------------------------------------------------------}
+constOf :: a -> Stamage a
+constOf value = Stamage {
+    gen = return value,
+    next = const $ constOf value
+}
+
+-- Stream Generators ----------------------------------------------------------
 oddEvenGen = stamageGen oddEven
 evenOddGen = stamageGen evenOdd
 
@@ -67,6 +77,10 @@ uniqueStr = stamageGen (uniqueSM Set.empty)
 
 constStrSM ::(Arbitrary a) =>  Gen (Str a)
 constStrSM = stamageGen (constSM Nothing)
+
+constStrOf :: Arbitrary a => a -> Gen (Str a)
+constStrOf value = stamageGen (constSM (Just value))
+
 
 
 
