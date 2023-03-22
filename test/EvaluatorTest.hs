@@ -11,7 +11,7 @@ import Rattus.Stream
 
 prop_seesAlternatingEvenOdd :: Property
 prop_seesAlternatingEvenOdd =
-    forAll evenOddGen alternatesEvenOdd'    
+    forAll evenOddGen alternatesEvenOdd 
 
 
 prop_seesConst :: Int -> Bool

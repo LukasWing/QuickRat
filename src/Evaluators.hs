@@ -64,19 +64,8 @@ areIncreasing (h1 ::: t1) =
         checks = (20::Int)
     in isIncreasing h1 (adv t1) checks
 
-alternatesEvenOdd :: Str Int -> Int -> Bool
-alternatesEvenOdd (h ::: t) checksLeft =
-    checksLeft == 0
-    || even h
-    && alternatesOddEven (adv t) (checksLeft - 1)
+alternatesEvenOdd :: Integral a => Str a -> Bool
+alternatesEvenOdd aStr = stamateRun aStr (isAlternatingSM True)
 
-alternatesEvenOdd' :: Integral a => Str a -> Bool
-alternatesEvenOdd' aStr = stamateRun aStr (isAlternatingSM True)
-
-
-alternatesOddEven :: Str Int -> Int -> Bool
-alternatesOddEven (h ::: t) checksLeft =
-    checksLeft == 0
-    || odd h
-    && alternatesEvenOdd (adv t) checksLeft
-
+alternatesOddEven :: Integral a => Str a -> Bool
+alternatesOddEven aStr = stamateRun aStr (isAlternatingSM False)
