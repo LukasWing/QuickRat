@@ -17,7 +17,7 @@ stamateRun :: Str a -> Stamate a -> Bool
 stamateRun aStr aStamate =
     let stamateRun' (h:::t) aStamate' checksLeft =
             checksLeft == 0
-            || check aStamate h
+            || check aStamate' h
             && stamateRun' (adv t) (next aStamate' h) (pred checksLeft)
         nChecks = 20
     in stamateRun' aStr aStamate nChecks
@@ -36,6 +36,15 @@ isConstSM input = Stamate {
                         Just val' -> val' == value
                         Nothing -> True,
     next = isConstSM . Just
+}
+
+
+isAlternatingSM :: (Integral a) => Bool -> Stamate a
+isAlternatingSM expectEven = Stamate{
+    check = \anInt  -> if expectEven 
+                        then even anInt 
+                        else odd anInt,
+    next = \_ -> isAlternatingSM (not expectEven)
 }
 
 -- Testables ------------------------------------------------------------------
@@ -60,6 +69,10 @@ alternatesEvenOdd (h ::: t) checksLeft =
     checksLeft == 0
     || even h
     && alternatesOddEven (adv t) (checksLeft - 1)
+
+alternatesEvenOdd' :: Integral a => Str a -> Bool
+alternatesEvenOdd' aStr = stamateRun aStr (isAlternatingSM True)
+
 
 alternatesOddEven :: Str Int -> Int -> Bool
 alternatesOddEven (h ::: t) checksLeft =

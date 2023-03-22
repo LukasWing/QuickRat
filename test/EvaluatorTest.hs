@@ -5,9 +5,13 @@ module EvaluatorTest (
 ) where
 import Generators hiding (next)
 import Evaluators
-import Helpers (constStr)
+import Helpers
 import Test.QuickCheck
 import Rattus.Stream
+
+prop_seesAlternatingEvenOdd :: Property
+prop_seesAlternatingEvenOdd =
+    forAll evenOddGen alternatesEvenOdd'    
 
 
 prop_seesConst :: Int -> Bool
