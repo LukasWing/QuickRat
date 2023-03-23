@@ -69,6 +69,12 @@ prop_OrTIsNeutral anyStr =
             ) 
             anyStr
 
+-- ~ (F -> T)
+prop_ImpliesGetsFalse :: Bool
+prop_ImpliesGetsFalse =
+    evalLTL (Not (Implies (Not tautology) tautology)) (constStr 42)
+
+
 return []
 runTests :: IO Bool
 runTests = $quickCheckAll

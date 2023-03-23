@@ -10,12 +10,16 @@ import Rattus
 type StrPred a = Str a -> Str Bool
 
 data TPred a where
-    SP  :: StrPred a -> TPred a
-    Not :: TPred a -> TPred a
-    And :: TPred a -> TPred a -> TPred a
-    Or  :: TPred a -> TPred a -> TPred a
-
-    -- etc.
+    SP          :: StrPred a -> TPred a
+    Not         :: TPred a -> TPred a
+    And         :: TPred a -> TPred a -> TPred a
+    Or          :: TPred a -> TPred a -> TPred a
+    Implies     :: TPred a -> TPred a -> TPred a
+    Always      :: TPred a -> TPred a
+    Eventually  :: TPred a -> TPred a 
+    Until       :: TPred a -> TPred a -> TPred a
+    Imminently  :: TPred a -> TPred a
+    After       :: Int -> TPred a -> TPred a
 
 evalLTL' :: TPred a -> Str a -> Str Bool
 evalLTL' formulae aStr =
@@ -24,8 +28,8 @@ evalLTL' formulae aStr =
         Not aTPred  -> negateStr $ evalLTL' aTPred aStr
         And phi psi -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         Or phi psi  -> RS.zipWith (box (||)) (evalLTL' phi aStr) (evalLTL' psi aStr)
-
-    -- etc.
+        Implies phi psi -> evalLTL' (Or phi (Not psi)) aStr
+    
 
 
 evalLTL :: TPred a -> Str a -> Bool
