@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wno-orphans #-}
 module Helpers where
 import Rattus.Stream
+import Rattus.Stream as RS
+
 import Rattus
 
 class AlmostEq a where
@@ -25,4 +27,8 @@ strHead  (h:::_) = h
 
 constStr :: a -> Str a
 constStr v = v ::: delay (constStr v)
+
+negateStr :: Str Bool  -> Str Bool
+negateStr = RS.map (box not)
+
 

@@ -8,6 +8,8 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import qualified Data.Set as Set
+import Helpers
+import Evaluators
 
 
 prop_constStreamsAreEqual :: Int -> Bool
@@ -26,6 +28,18 @@ prop_headNotEqual_notAlmostEqual :: Str Int -> Str Int -> Property
 prop_headNotEqual_notAlmostEqual as1 as2 =
     strTake 2 as1 /= strTake 2 as2 ==> not (as1 =~= as2)
 
+prop_negateStrAllTrueAllFalse :: Bool
+prop_negateStrAllTrueAllFalse =
+    negateStr (constStr True) =~= constStr False
+
+prop_negateStrAllFalseAllTrue :: Bool
+prop_negateStrAllFalseAllTrue =
+    negateStr (constStr False) =~= constStr True
+
+prop_negationInverts :: Str Bool -> Bool
+prop_negationInverts aStr = 
+    negateStr (negateStr aStr) =~= aStr
+    
 return []
 runTests :: IO Bool
 runTests = $quickCheckAll

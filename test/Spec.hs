@@ -8,11 +8,16 @@ import System.Exit
 import Test.QuickCheck
 import Test.QuickCheck.Test 
 import Control.Monad.State
+import qualified LTLTest as LT
 
 
 main :: IO ()
 main = do
-    good <- and <$> sequence [GT.runTests, HT.runTests, ET.runTests]
+    let testRunners =   [GT.runTests
+                        , HT.runTests
+                        , ET.runTests
+                        , LT.runTests]
+    good <- and <$> sequence testRunners
     if good
         then exitSuccess
         else exitFailure

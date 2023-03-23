@@ -73,3 +73,9 @@ alternatesOddEven aStr = stamateRun aStr (isAlternatingSM False)
 
 allTrue :: Str Bool -> Bool
 allTrue aStr = stamateRun aStr $ isConstSM (Just True)
+
+allFalse :: Str Bool -> Bool
+allFalse aStr = stamateRun aStr $ isConstSM (Just False)
+
+
+
