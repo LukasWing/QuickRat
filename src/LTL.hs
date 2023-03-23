@@ -13,16 +13,19 @@ data TPred a where
     And :: TPred a -> TPred a -> TPred a
     -- etc.
 
-evalLTL :: TPred a -> Str a -> Bool
-evalLTL formulae aStr =
+evalLTL' :: TPred a -> Str a -> Str Bool
+evalLTL' formulae aStr =
     case formulae of
-        SP aStrPred -> (allTrue . aStrPred) aStr
-        Not aTPred -> evalLTL aTPred aStr
-        Not (SP spf) -> evalLTL (SP (negateStr . spf)) aStr
-        Not (Not aStrPred)  -> evalLTL aStrPred aStr
-        Not tpF -> evalLTL tpF 
-        And _ _ -> True
+        SP aStrPred ->  aStrPred aStr
+        Not aTPred -> negateStr $ evalLTL' aTPred aStr
+        -- Not (SP spf) -> evalLTL (SP (negateStr . spf)) aStr
+        -- Not (Not aStrPred)  -> evalLTL aStrPred aStr
+        -- Not tpF -> evalLTL tpF 
+        And _ _ -> constStr True
     -- etc.
+
+evalLTL :: TPred a -> Str a -> Bool
+evalLTL formulae aStr = allTrue  (evalLTL'  formulae aStr)
 
 tautology = SP (\_ -> constStr True)
 
