@@ -79,3 +79,4 @@ allFalse aStr = stamateRun aStr $ isConstSM (Just False)
 
 
 
+

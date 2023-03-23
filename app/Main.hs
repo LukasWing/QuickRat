@@ -21,7 +21,8 @@ runLTL = do
     let expr5 = SP (\_ -> constStr True)
     let expr3 = And expr5 expr5
     let expr4 = Not $ And expr5 expr5
-    print $ evalLTL expr5 (constStr True) 
+    print "LTL: Done"
+
 
 main :: IO ()
 main = do
