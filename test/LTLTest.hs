@@ -74,6 +74,18 @@ prop_ImpliesGetsFalse :: Bool
 prop_ImpliesGetsFalse =
     evalLTL (Not (Implies (Not tautology) tautology)) (constStr 42)
 
+prop_Always :: Bool
+prop_Always =
+    evalLTL (Always (tautology)) (constStr 42)
+
+prop_Eventually :: Property
+prop_Eventually =
+    forAll increasingNums $ \aStr -> 
+        evalLTL (Eventually 
+                    (SP(\innerStr -> RS.map (box (>=(0::Int))) innerStr))
+                ) 
+                aStr
+
 
 return []
 runTests :: IO Bool

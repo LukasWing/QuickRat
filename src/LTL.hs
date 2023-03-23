@@ -24,11 +24,14 @@ data TPred a where
 evalLTL' :: TPred a -> Str a -> Str Bool
 evalLTL' formulae aStr =
     case formulae of
-        SP aStrPred -> aStrPred aStr
-        Not aTPred  -> negateStr $ evalLTL' aTPred aStr
-        And phi psi -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
-        Or phi psi  -> RS.zipWith (box (||)) (evalLTL' phi aStr) (evalLTL' psi aStr)
+        SP aStrPred     -> aStrPred aStr
+        Not aTPred      -> negateStr $ evalLTL' aTPred aStr
+        And phi psi     -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
+        Or phi psi      -> RS.zipWith (box (||)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         Implies phi psi -> evalLTL' (Or phi (Not psi)) aStr
+        Always phi      -> evalLTL' phi aStr
+        Eventually phi  -> constStr False
+        
     
 
 
