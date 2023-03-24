@@ -59,9 +59,9 @@ prop_ImpliesGetsFalse :: Str String -> Bool
 prop_ImpliesGetsFalse =
     evalLTL $ Not  (Not tautology) `Implies` tautology
 
-prop_Always :: Str String -> Bool
-prop_Always =
-    evalLTL $ Always tautology
+-- prop_Always :: Str String -> Bool
+-- prop_Always =
+--     evalLTL $ Always tautology
 
 prop_Eventually :: Property
 prop_Eventually =

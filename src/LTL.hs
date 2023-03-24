@@ -7,7 +7,7 @@ import Evaluators
 import Helpers
 import Rattus
 
-type StrPred a = Str a -> Str Bool
+type StrPred a = Str a -> Str Bool --SM
 
 data TPred a where
     SP          :: StrPred a -> TPred a
@@ -22,24 +22,24 @@ data TPred a where
     After       :: Int -> TPred a -> TPred a
 
 evalLTL' :: TPred a -> Str a -> Str Bool
-evalLTL' formulae aStr =
+evalLTL' formulae aStr@(h:::t) =
     case formulae of
         SP aStrPred     -> aStrPred aStr
         Not aTPred      -> negateStr $ evalLTL' aTPred aStr
-        And phi psi     -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         Or phi psi      -> RS.zipWith (box (||)) (evalLTL' phi aStr) (evalLTL' psi aStr)
-        Until phi psi    -> error "Not Implemented"
-        Imminently phi  -> error "Not Implemented"
+        And phi psi     -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         Implies phi psi -> evalLTL' (Not phi `Or` psi) aStr
-        Always phi      -> evalLTL' phi aStr
-        Eventually phi  -> constStr False
+        Eventually phi  -> error "Not Implemented" -- some suffix
+        Until phi psi   -> error "Not Implemented"
+        Imminently phi  -> error "Not Implemented"
+        Always phi      -> RS.zipWith 
+                                (box (&&)) 
+                                (evalLTL' phi aStr) 
+                                (evalLTL' (Always phi) (adv t)) -- loops forever.
         After anInt phi -> error "Not Implemented"
 
-
-
-
 evalLTL :: TPred a -> Str a -> Bool
-evalLTL formulae aStr = allTrue  (evalLTL' formulae aStr)
+evalLTL formulae aStr = allTrue (evalLTL' formulae aStr)
 
 tautology :: TPred a
 tautology = SP (\_ -> constStr True)

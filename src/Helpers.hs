@@ -4,6 +4,7 @@ import Rattus.Stream
 import Rattus.Stream as RS
 
 import Rattus
+import qualified Rattus.Stream as Stream
 
 class AlmostEq a where
     (=~=) :: a -> a -> Bool
@@ -30,5 +31,9 @@ constStr v = v ::: delay (constStr v)
 
 negateStr :: Str Bool  -> Str Bool
 negateStr = RS.map (box not)
+
+allSuffix :: Str a ->  [Str a]
+allSuffix lst = error "Not implemented"
+
 
 
