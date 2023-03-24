@@ -37,55 +37,37 @@ prop_NotContractionTrue =
         aStr = constStr (0::Int)
 
 prop_NotIsInverse :: Str Bool -> Bool
-prop_NotIsInverse _aStr =
-    evalLTL (Not (Not tautology)) _aStr
+prop_NotIsInverse = evalLTL $ Not $ Not tautology
 
 -- ~(~phi ^ phi) == true.
-prop_AndContradictionAndTautologyContradiction :: Str Bool-> Bool
-prop_AndContradictionAndTautologyContradiction anyStr =
-    evalLTL (Not 
-                (And 
-                    (Not (mkSP anyStr)) 
-                    (mkSP anyStr)
-                )
-            ) 
-            anyStr
+prop_AndContradictionAndTautologyContradiction :: Str Bool -> Str String -> Bool
+prop_AndContradictionAndTautologyContradiction boolStr1  =
+    evalLTL $ Not $ Not (mkSP boolStr1) `And` mkSP boolStr1
 
--- ~phi || phi == true.
-prop_OrContradictionAndTautologyContradiction :: Str Bool -> Bool
-prop_OrContradictionAndTautologyContradiction anyStr =
-    evalLTL (Or 
-                (Not (mkSP anyStr)) 
-                (mkSP anyStr)
-            ) 
-            anyStr 
+-- ~phi || phi.
+prop_OrContradictionAndTautologyContradiction :: Str Bool -> Str String-> Bool
+prop_OrContradictionAndTautologyContradiction boolStr1 =
+    evalLTL $ Not (mkSP boolStr1) `Or` mkSP boolStr1
 
 -- phi || T
-prop_OrTIsNeutral :: Str Bool -> Bool
-prop_OrTIsNeutral anyStr = 
-    evalLTL (Or 
-                (mkSP anyStr)
-                tautology
-            ) 
-            anyStr
+prop_OrTIsNeutral :: Str Bool -> Str String -> Bool
+prop_OrTIsNeutral boolStr1  =
+    evalLTL $ mkSP boolStr1 `Or` tautology
 
 -- ~ (F -> T)
-prop_ImpliesGetsFalse :: Bool
+prop_ImpliesGetsFalse :: Str String -> Bool
 prop_ImpliesGetsFalse =
-    evalLTL (Not (Implies (Not tautology) tautology)) (constStr 42)
+    evalLTL $ Not  (Not tautology) `Implies` tautology
 
-prop_Always :: Bool
+prop_Always :: Str String -> Bool
 prop_Always =
-    evalLTL (Always (tautology)) (constStr 42)
+    evalLTL $ Always tautology
 
 prop_Eventually :: Property
 prop_Eventually =
-    forAll increasingNums $ \aStr -> 
-        evalLTL (Eventually 
-                    (SP(\innerStr -> RS.map (box (>=(0::Int))) innerStr))
-                ) 
-                aStr
-
+    forAll increasingNums $
+        let positive = (>=(0::Int)) in
+        evalLTL $ Eventually $ SP (RS.map (box positive))
 
 return []
 runTests :: IO Bool
