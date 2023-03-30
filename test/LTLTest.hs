@@ -69,6 +69,11 @@ prop_Eventually =
         let positive = (>=(0::Int)) in
         evalLTL $ Eventually $ SP (RS.map (box positive))
 
+-- prop_ImminentlyMoves1 :: Bool
+-- prop_ImminentlyMoves1 = not phi4 && imminentPhi4
+--     where phi4 = mkSp()
+
+
 return []
 runTests :: IO Bool
 runTests = $quickCheckAll

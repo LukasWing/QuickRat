@@ -5,6 +5,7 @@ import Test.QuickCheck
 import Rattus.Stream hiding (map)
 import LTL
 import Helpers (constStr)
+import Generators
 
 
 runSG = do
@@ -21,6 +22,8 @@ runLTL = do
     let expr5 = SP (\_ -> constStr True)
     let expr3 = And expr5 expr5
     let expr4 = Not $ And expr5 expr5
+    sample (cyclicStrOf [1,2,3])
+    print $ fixedCyclicStr [1,2]
     print "LTL: Done"
 
 
@@ -29,3 +32,4 @@ main = do
     runSG
     runLTL
     -- PA.run
+

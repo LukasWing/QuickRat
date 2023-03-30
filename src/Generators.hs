@@ -31,6 +31,16 @@ stamageGen aStamage = do
     t <- stamageGen (next aStamage v)
     return $ v ::: delay t
 
+data Stama a = Stama {
+    genElem:: a,
+    nextStr:: a -> Stama a
+}
+
+stamageStr :: Stama a -> Str a
+stamageStr aStama = v ::: delay t
+    where   v = genElem aStama
+            t = stamageStr (nextStr aStama v)
+
 
 -- State Machines ------------------------------------------------------------
 increasingSM :: (Arbitrary a, Num a) => a -> Stamage a
@@ -65,6 +75,18 @@ constOf value = Stamage {
     next = const $ constOf value
 }
 
+cycleOf :: ([a], Int) -> Stamage a 
+cycleOf (aList, index) = Stamage {
+    gen = return $ aList !! (index `mod` length aList),
+    next = const $ cycleOf (aList, index + 1)
+}
+
+cycleOfStr :: ([a], Int) -> Stama a 
+cycleOfStr (aList, index) = Stama {
+    genElem = aList !! (index `mod` length aList),
+    nextStr = const $ cycleOfStr (aList, index + 1)
+}
+
 -- Stream Generators ----------------------------------------------------------
 oddEvenGen :: Gen (Str Int)
 oddEvenGen = stamageGen oddEven
@@ -83,6 +105,12 @@ constStrSM = stamageGen (constSM Nothing)
 
 constStrOf :: Arbitrary a => a -> Gen (Str a)
 constStrOf value = stamageGen (constSM (Just value))
+
+cyclicStrOf :: [a] -> Gen (Str a)
+cyclicStrOf aList = stamageGen $ cycleOf (aList, 0)
+
+fixedCyclicStr :: [a] -> Str a
+fixedCyclicStr aList = stamageStr $ cycleOfStr (aList, 0)
 
 
 
