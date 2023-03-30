@@ -23,6 +23,9 @@ strTake n aStr =
                 else reverse accumulator
     in strTake' n [] aStr
 
+strGet :: Int -> Str a -> a 
+strGet n aStr = last $ strTake (fromIntegral n) aStr 
+
 strHead :: Str a -> a
 strHead  (h:::_) = h
 
@@ -34,12 +37,5 @@ negateStr = RS.map (box not)
 
 allSuffix :: Str a ->  [Str a]
 allSuffix lst = error "Not implemented"
-
--- strRepeat aList = 
---     strRepeat' 0  constStr
---     where 
---         len = length aList 
---         strRepeat' index acc =
---             strRepeat' (index + 1) (aList !! (index `mod` len)):::delay(acc)
 
 

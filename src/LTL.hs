@@ -45,6 +45,6 @@ tautology :: TPred a
 tautology = SP (\_ -> constStr True)
 
 mkSP :: Str Bool -> TPred a
-mkSP aStr =   SP (const aStr)
+mkSP aStr = SP (const aStr)
 
 
