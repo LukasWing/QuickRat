@@ -69,26 +69,28 @@ prop_Eventually =
         let positive = (>=(0::Int)) in
         evalLTL $ Eventually $ SP (RS.map (box positive))
 
-phiBox :: TPred a
-phiBox = mkSP $ fixedCyclicStr [False, False, False, False, False, True, True, True, True, True]
+boolStep :: [Bool]
+boolStep = [False, False, False, False, False, True, True, True, True, True]
 
-psiBox :: TPred a
+phiBox :: TPred Bool
+phiBox = SP id
+
+psiBox :: TPred Bool
 psiBox = Not phiBox
 
 
 prop_ImminentlyMoves1 :: Bool
 prop_ImminentlyMoves1 = not phi4 && imminentPhi4
-    where phi4 = False
-          imminentPhi4 =  strGet 4 nextPhi
-          nextPhi = evalLTL' (Imminently phiBox) (constStr Nothing)
+    where   phi4 = boolStep !! 4
+            nextPhi = evalLTL' (Imminently phiBox) (fixedCyclicStr boolStep)
+            imminentPhi4 = strGet 4 nextPhi
 
 prop_ImminentlyMovesAPeriod :: Bool
 prop_ImminentlyMovesAPeriod = expected =~= actual
     where   expected = evalLTL'
-                    (iterate Imminently phiBox !! 10)
-                    (constStr Nothing)
-                    
-            actual = evalLTL' phiBox (constStr Nothing)
+                        (iterate Imminently phiBox !! 10)
+                        (fixedCyclicStr boolStep)
+            actual = evalLTL' phiBox (fixedCyclicStr boolStep)
 
 return []
 runTests :: IO Bool

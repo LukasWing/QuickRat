@@ -22,16 +22,16 @@ data TPred a where
     After       :: Int -> TPred a -> TPred a
 
 evalLTL' :: TPred a -> Str a -> Str Bool
-evalLTL' formulae aStr@(h:::t) =
+evalLTL' formulae aStr@(h ::: t) =
     case formulae of
         SP aStrPred     -> aStrPred aStr
         Not aTPred      -> negateStr $ evalLTL' aTPred aStr
         Or phi psi      -> RS.zipWith (box (||)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         And phi psi     -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         Implies phi psi -> evalLTL' (Not phi `Or` psi) aStr
+        Imminently phi  -> evalLTL' phi (adv t)
         Eventually phi  -> error "Not Implemented" -- some suffix
         Until phi psi   -> error "Not Implemented"
-        Imminently phi  -> error "Not Implemented"
         Always phi      -> RS.zipWith 
                                 (box (&&)) 
                                 (evalLTL' phi aStr) 
@@ -39,7 +39,7 @@ evalLTL' formulae aStr@(h:::t) =
         After anInt phi -> error "Not Implemented"
 
 evalLTL :: TPred a -> Str a -> Bool
-evalLTL formulae aStr = allTrue (evalLTL' formulae aStr)
+evalLTL formulae aStr = strHead (evalLTL' formulae aStr)
 
 tautology :: TPred a
 tautology = SP (\_ -> constStr True)

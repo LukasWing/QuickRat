@@ -24,7 +24,7 @@ strTake n aStr =
     in strTake' n [] aStr
 
 strGet :: Int -> Str a -> a 
-strGet n aStr = last $ strTake (fromIntegral n) aStr 
+strGet n aStr = last $ strTake (fromIntegral (n + 1)) aStr 
 
 strHead :: Str a -> a
 strHead  (h:::_) = h
