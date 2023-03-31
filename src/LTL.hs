@@ -41,8 +41,30 @@ evalLTL' formulae aStr@(h ::: t) =
                                 (evalLTL' (Always phi) (adv t)) -- loops forever.
         After anInt phi -> error "Not Implemented"
 
+
 evalLTL :: TPred a -> Str a -> Bool
 evalLTL formulae aStr = strHead (evalLTL' formulae aStr)
+
+checkLTL :: TPred a -> Str a -> Bool
+checkLTL aTPred aStr = 
+    checkLTL' aTPred aStr (0::Int) 
+    where 
+        checkLTL' (Always phi) (h ::: t) counter = 
+            evalLTL phi (h ::: t) 
+            && counter > 20 -- eerr?
+            || checkLTL' (Always phi) (adv t) (counter + 1)
+        checkLTL' (Until phi psi) (h ::: t) counter = 
+            evalLTL psi (h ::: t) 
+            || evalLTL phi (h ::: t) 
+            && (counter > 20 
+                || checkLTL' (Until phi psi) (adv t) (counter + 1))
+        
+        checkLTL' _ _ _ = False
+
+
+
+    
+
 
 tautology :: TPred a
 tautology = SP (\_ -> constStr True)

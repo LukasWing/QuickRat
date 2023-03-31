@@ -42,7 +42,7 @@ prop_NotIsInverse = evalLTL $ Not $ Not tautology
 
 -- ~(~phi ^ phi) == true.
 prop_AndContradictionAndTautologyContradiction :: Str Bool -> Bool
-prop_AndContradictionAndTautologyContradiction = 
+prop_AndContradictionAndTautologyContradiction =
     evalLTL (Not $ Not idSP `And` idSP)
 
     -- evalLTL (Not $ Not idSP `And` idSP) boolStr1
@@ -62,9 +62,25 @@ prop_ImpliesGetsFalse :: Str String -> Bool
 prop_ImpliesGetsFalse =
     evalLTL $ Not  (Not tautology) `Implies` tautology
 
--- prop_Always :: Str String -> Bool
--- prop_Always =
---     evalLTL $ Always tautology
+prop_Always ::  Bool
+prop_Always =
+    checkLTL (Always idSP) (constStr True)
+
+prop_UntilAllTrue :: Bool
+prop_UntilAllTrue =
+    checkLTL (Until idSP idSP) (constStr True)
+
+prop_UntilPsiTrueAllTrue :: Bool
+prop_UntilPsiTrueAllTrue =
+    checkLTL (Until idSP (SP negateStr)) (constStr True)
+
+prop_UntilPhiTrueAllTrue :: Bool
+prop_UntilPhiTrueAllTrue =
+    checkLTL (Until (SP negateStr) idSP) (constStr True)
+    
+prop_UntilBothFalseGivesFalse :: Bool
+prop_UntilBothFalseGivesFalse =
+    not $ checkLTL (Until idSP idSP) (constStr False)
 
 prop_Eventually :: Property
 prop_Eventually =
@@ -79,7 +95,7 @@ phiBox :: TPred Bool
 phiBox = SP id
 
 psiBox :: TPred Bool
-psiBox = Not phiBoxgsp
+psiBox = Not phiBox
 
 prop_ImminentlyMoves1 :: Bool
 prop_ImminentlyMoves1 = not phi4 && imminentPhi4
