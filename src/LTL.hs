@@ -7,7 +7,7 @@ import Evaluators
 import Helpers
 import Rattus
 
-idSP :: TPred Bool 
+idSP :: TPred Bool
 idSP = SP id
 
 type StrPred a = Str a -> Str Bool --SM
@@ -33,37 +33,40 @@ evalLTL' formulae aStr@(h ::: t) =
         And phi psi     -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
         Implies phi psi -> evalLTL' (Not phi `Or` psi) aStr
         Imminently phi  -> evalLTL' phi (adv t)
-        Eventually phi  -> error "Not Implemented" -- some suffix
+        Eventually phi  -> evalLTL' (
+                            Imminently phi 
+                            `Or` Imminently (Imminently phi)
+                            `Or` Imminently (Imminently $ Imminently phi)
+                            ) aStr
         Until phi psi   -> error "Not Implemented"
-        Always phi      -> RS.zipWith 
-                                (box (&&)) 
-                                (evalLTL' phi aStr) 
+        Always phi      -> RS.zipWith
+                                (box (&&))
+                                (evalLTL' phi aStr)
                                 (evalLTL' (Always phi) (adv t)) -- loops forever.
         After anInt phi -> error "Not Implemented"
-
 
 evalLTL :: TPred a -> Str a -> Bool
 evalLTL formulae aStr = strHead (evalLTL' formulae aStr)
 
 checkLTL :: TPred a -> Str a -> Bool
-checkLTL aTPred aStr = 
-    checkLTL' aTPred aStr (0::Int) 
-    where 
-        checkLTL' (Always phi) (h ::: t) counter = 
-            evalLTL phi (h ::: t) 
+checkLTL aTPred aStr =
+    checkLTL' aTPred aStr (0::Int)
+    where
+        checkLTL' (Always phi) (h ::: t) counter =
+            evalLTL phi (h ::: t)
             && counter > 20 -- eerr?
             || checkLTL' (Always phi) (adv t) (counter + 1)
-        checkLTL' (Until phi psi) (h ::: t) counter = 
-            evalLTL psi (h ::: t) 
-            || evalLTL phi (h ::: t) 
-            && (counter > 20 
+        checkLTL' (Until phi psi) (h ::: t) counter =
+            evalLTL psi (h ::: t)
+            || evalLTL phi (h ::: t)
+            && (counter > 20
                 || checkLTL' (Until phi psi) (adv t) (counter + 1))
-        
+
         checkLTL' _ _ _ = False
 
 
 
-    
+
 
 
 tautology :: TPred a

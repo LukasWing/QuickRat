@@ -82,6 +82,11 @@ prop_UntilBothFalseGivesFalse :: Bool
 prop_UntilBothFalseGivesFalse =
     not $ checkLTL (Until idSP idSP) (constStr False)
 
+prop_EventuallyFalseGivesFalse :: Bool
+prop_EventuallyFalseGivesFalse =
+    evalLTL (Eventually idSP) (constStr True) 
+
+
 prop_Eventually :: Property
 prop_Eventually =
     forAll increasingNums $
