@@ -82,9 +82,23 @@ prop_UntilBothFalseGivesFalse :: Bool
 prop_UntilBothFalseGivesFalse =
     not $ checkLTL (Until idSP idSP) (constStr False)
 
-prop_EventuallyFalseGivesFalse :: Bool
-prop_EventuallyFalseGivesFalse =
-    evalLTL (Eventually idSP) (constStr True) 
+prop_EventuallyTrueGivesTrue :: Bool
+prop_EventuallyTrueGivesTrue =
+    evalLTL (Eventually idSP) (constStr True)
+
+prop_EventuallyBoxGivesFalse :: Bool
+prop_EventuallyBoxGivesFalse =
+    not $ evalLTL (Eventually idSP) $ padFinite boolStep
+
+prop_EventuallyOneTre :: Bool
+prop_EventuallyOneTre =
+    evalLTL (Eventually idSP) $ padFinite [False, True, False]
+
+prop_AfterAllTrue :: Int -> Bool
+prop_AfterAllTrue timeGap = evalLTL (After timeGap idSP) (constStr True)
+
+prop_AfterFirstFalse :: Bool
+prop_AfterFirstFalse  = not $ evalLTL (After 0 idSP) $ padFinite [False, True]
 
 
 prop_Eventually :: Property

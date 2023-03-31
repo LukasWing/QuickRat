@@ -34,16 +34,21 @@ evalLTL' formulae aStr@(h ::: t) =
         Implies phi psi -> evalLTL' (Not phi `Or` psi) aStr
         Imminently phi  -> evalLTL' phi (adv t)
         Eventually phi  -> evalLTL' (
-                            Imminently phi 
+                            phi
+                            `Or` Imminently phi 
                             `Or` Imminently (Imminently phi)
                             `Or` Imminently (Imminently $ Imminently phi)
+                            -- TODO: etc with iterate
                             ) aStr
         Until phi psi   -> error "Not Implemented"
-        Always phi      -> RS.zipWith
-                                (box (&&))
-                                (evalLTL' phi aStr)
-                                (evalLTL' (Always phi) (adv t)) -- loops forever.
-        After anInt phi -> error "Not Implemented"
+        Always phi      -> error "Not Implemented"
+        After anInt phi -> evalLTL' (
+                            -- start with anInt reps:
+                            Imminently $ Always phi 
+                            `Or` Imminently (Imminently $ Always phi)
+                            `Or` Imminently (Imminently $ Imminently $ Always phi)
+                            -- TODO: etc. with iterate
+                            ) aStr
 
 evalLTL :: TPred a -> Str a -> Bool
 evalLTL formulae aStr = strHead (evalLTL' formulae aStr)

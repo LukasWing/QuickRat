@@ -86,6 +86,13 @@ cycleOfStr (aList, index) = Stama {
     genElem = aList !! (index `mod` length aList),
     nextStr = const $ cycleOfStr (aList, index + 1)
 }
+padStr :: ([a], Int) -> Stama a 
+padStr (aList, index) = Stama {
+    genElem = if index < length aList 
+                then aList !! index 
+                else last aList,
+    nextStr = const $ padStr (aList, index + 1)
+}
 
 -- Stream Generators ----------------------------------------------------------
 oddEvenGen :: Gen (Str Int)
@@ -111,6 +118,8 @@ cyclicStrOf aList = stamageGen $ cycleOf (aList, 0)
 
 fixedCyclicStr :: [a] -> Str a
 fixedCyclicStr aList = stamageStr $ cycleOfStr (aList, 0)
+
+padFinite aList = stamageStr $ padStr (aList, 0) 
 
 
 
