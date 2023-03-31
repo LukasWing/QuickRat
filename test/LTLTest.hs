@@ -11,41 +11,35 @@ import Rattus
 import qualified Data.Set as Set
 import Helpers
 import Evaluators
-import LTL
+import LTL 
 
 
 -- evalLTL tests ----------------------------------------------------------
 prop_SPConstTrue :: Bool
 prop_SPConstTrue =
-    let expr5 = SP (\_ -> constStr True) in
+    let expr5 = tautology in
     evalLTL expr5 (constStr True) && evalLTL expr5 (constStr False)
 
 prop_SPConstTrue_AnyIn :: Str String -> Bool
 prop_SPConstTrue_AnyIn aStr =
-    let expr5 = SP (\_ -> constStr True) in
+    let expr5 = tautology in
     evalLTL expr5 aStr
 
-prop_NotAllFalse :: Str String -> Bool
-prop_NotAllFalse aStr =
-    let nExpr = Not (SP (\_ -> constStr False)) in
+prop_NotContractionTrue :: Str String -> Bool
+prop_NotContractionTrue aStr =
+    let nExpr = Not contradiction in
     evalLTL nExpr aStr
 
-prop_NotContractionTrue :: Bool
-prop_NotContractionTrue =
-    evalLTL (Not contradiction) aStr
-    where
-        contradiction = SP (RS.map (box (>10)))
-        aStr = constStr (0::Int)
+idSP = SP (strHead)
 
 prop_NotIsInverse :: Str Bool -> Bool
 prop_NotIsInverse = evalLTL $ Not $ Not tautology
-
+ 
 -- ~(~phi ^ phi) == true.
 prop_AndContradictionAndTautologyContradiction :: Str Bool -> Bool
 prop_AndContradictionAndTautologyContradiction =
     evalLTL (Not $ Not idSP `And` idSP)
 
-    -- evalLTL (Not $ Not idSP `And` idSP) boolStr1
 
 -- ~phi || phi.
 prop_OrContradictionAndTautologyContradiction :: Str Bool-> Bool
@@ -72,11 +66,11 @@ prop_UntilAllTrue =
 
 prop_UntilPsiTrueAllTrue :: Bool
 prop_UntilPsiTrueAllTrue =
-    checkLTL (Until idSP (SP negateStr)) (constStr True)
+    checkLTL (Until idSP $ Not (idSP)) (constStr True)
 
 prop_UntilPhiTrueAllTrue :: Bool
 prop_UntilPhiTrueAllTrue =
-    checkLTL (Until (SP negateStr) idSP) (constStr True)
+    checkLTL (Until (Not idSP) idSP) (constStr True)
     
 prop_UntilBothFalseGivesFalse :: Bool
 prop_UntilBothFalseGivesFalse =
@@ -86,13 +80,17 @@ prop_EventuallyTrueGivesTrue :: Bool
 prop_EventuallyTrueGivesTrue =
     evalLTL (Eventually idSP) (constStr True)
 
-prop_EventuallyBoxGivesFalse :: Bool
-prop_EventuallyBoxGivesFalse =
-    not $ evalLTL (Eventually idSP) $ padFinite boolStep
+prop_EventuallyBoolStep :: Bool
+prop_EventuallyBoolStep =
+    evalLTL (Eventually idSP) $ padFinite boolStep
 
-prop_EventuallyOneTre :: Bool
-prop_EventuallyOneTre =
+prop_EventuallyOneTrue :: Bool
+prop_EventuallyOneTrue =
     evalLTL (Eventually idSP) $ padFinite [False, True, False]
+
+prop_EventuallyTrueMightBeContradiction :: Bool
+prop_EventuallyTrueMightBeContradiction =
+    evalLTL (Eventually idSP) (constStr False)
 
 prop_AfterAllTrue :: Int -> Bool
 prop_AfterAllTrue timeGap = evalLTL (After timeGap idSP) (constStr True)
@@ -105,30 +103,16 @@ prop_Eventually :: Property
 prop_Eventually =
     forAll increasingNums $
         let positive = (>=(0::Int)) in
-        evalLTL $ Eventually $ SP (RS.map (box positive))
+        evalLTL $ Eventually $ SP (positive . strHead)
 
 boolStep :: [Bool]
 boolStep = [False, False, False, False, False, True, True, True, True, True]
 
 phiBox :: TPred Bool
-phiBox = SP id
+phiBox = idSP
 
 psiBox :: TPred Bool
 psiBox = Not phiBox
-
-prop_ImminentlyMoves1 :: Bool
-prop_ImminentlyMoves1 = not phi4 && imminentPhi4
-    where   phi4 = boolStep !! 4
-            nextPhi = evalLTL' (Imminently phiBox) (fixedCyclicStr boolStep)
-            imminentPhi4 = strGet 4 nextPhi
-
-prop_ImminentlyMovesAPeriod :: Bool
-prop_ImminentlyMovesAPeriod = expected =~= actual
-    where   expected = evalLTL'
-                        (iterate Imminently phiBox !! 10)
-                        (fixedCyclicStr boolStep)
-            actual = evalLTL' phiBox (fixedCyclicStr boolStep)
-
 
 return []
 runTests :: IO Bool

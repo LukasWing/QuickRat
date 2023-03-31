@@ -7,11 +7,13 @@ import Evaluators
 import Helpers
 import Rattus
 
-idSP :: TPred Bool
-idSP = SP id
+type StrPred a = Str a -> Bool -- SM
 
-type StrPred a = Str a -> Str Bool --SM
+tautology :: TPred a
+tautology = SP (const True)
 
+contradiction :: TPred a
+contradiction = SP (const False)
 data TPred a where
     SP          :: StrPred a -> TPred a
     Not         :: TPred a -> TPred a
@@ -24,34 +26,27 @@ data TPred a where
     Eventually  :: TPred a -> TPred a
     After       :: Int -> TPred a -> TPred a
 
-evalLTL' :: TPred a -> Str a -> Str Bool
-evalLTL' formulae aStr@(h ::: t) =
-    case formulae of
-        SP aStrPred     -> aStrPred aStr
-        Not aTPred      -> negateStr $ evalLTL' aTPred aStr
-        Or phi psi      -> RS.zipWith (box (||)) (evalLTL' phi aStr) (evalLTL' psi aStr)
-        And phi psi     -> RS.zipWith (box (&&)) (evalLTL' phi aStr) (evalLTL' psi aStr)
-        Implies phi psi -> evalLTL' (Not phi `Or` psi) aStr
-        Imminently phi  -> evalLTL' phi (adv t)
-        Eventually phi  -> evalLTL' (
-                            phi
-                            `Or` Imminently phi 
-                            `Or` Imminently (Imminently phi)
-                            `Or` Imminently (Imminently $ Imminently phi)
-                            -- TODO: etc with iterate
-                            ) aStr
-        Until phi psi   -> error "Not Implemented"
-        Always phi      -> error "Not Implemented"
-        After anInt phi -> evalLTL' (
-                            -- start with anInt reps:
-                            Imminently $ Always phi 
-                            `Or` Imminently (Imminently $ Always phi)
-                            `Or` Imminently (Imminently $ Imminently $ Always phi)
-                            -- TODO: etc. with iterate
-                            ) aStr
 
 evalLTL :: TPred a -> Str a -> Bool
-evalLTL formulae aStr = strHead (evalLTL' formulae aStr)
+evalLTL = evalLTL' 20 where
+    evalLTL' :: Int -> TPred a -> Str a -> Bool
+    evalLTL' checksLeft formulae aStr@(h ::: t) =
+        
+        checksLeft <= 0 ||
+        let evaln = evalLTL' (checksLeft - 1) 
+            eval = evalLTL' checksLeft  
+        in
+        case formulae of
+            SP aStrPred     -> aStrPred aStr
+            Not aTPred      -> not $ eval aTPred aStr
+            Or phi psi      -> eval phi aStr || eval psi aStr
+            And phi psi     -> eval phi aStr && eval psi aStr
+            Implies phi psi -> eval (Not phi `Or` psi) aStr
+            Imminently phi  -> evaln phi (adv t)
+            Eventually phi  -> eval phi aStr || evaln (Eventually phi) (adv t)
+            Until phi psi   -> error "Not Implemented"
+            Always phi      -> eval phi aStr && evaln (Always phi) (adv t)
+            After anInt phi -> error "Not Implemented"
 
 checkLTL :: TPred a -> Str a -> Bool
 checkLTL aTPred aStr =
@@ -70,10 +65,4 @@ checkLTL aTPred aStr =
         checkLTL' _ _ _ = False
 
 
-
-
-
-
-tautology :: TPred a
-tautology = SP (\_ -> constStr True)
 

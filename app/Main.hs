@@ -19,7 +19,7 @@ runSG = do
     
 runLTL = do 
     print "LTL: ------"
-    let expr5 = SP (\_ -> constStr True)
+    let expr5 = tautology
     let expr3 = And expr5 expr5
     let expr4 = Not $ And expr5 expr5
     sample (cyclicStrOf [1,2,3])

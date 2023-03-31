@@ -114,11 +114,12 @@ constStrOf :: Arbitrary a => a -> Gen (Str a)
 constStrOf value = stamageGen (constSM (Just value))
 
 cyclicStrOf :: [a] -> Gen (Str a)
-cyclicStrOf aList = stamageGen $ cycleOf (aList, 0)
+cyclicStrOf aList = return $ fixedCyclicStr aList
 
 fixedCyclicStr :: [a] -> Str a
 fixedCyclicStr aList = stamageStr $ cycleOfStr (aList, 0)
 
+padFinite :: [a] -> Str a
 padFinite aList = stamageStr $ padStr (aList, 0) 
 
 
