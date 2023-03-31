@@ -31,5 +31,5 @@ main :: IO ()
 main = do
     runSG
     runLTL
-    -- PA.run
+    PA.run
 

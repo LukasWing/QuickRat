@@ -13,6 +13,7 @@ import Helpers
 import Evaluators
 import LTL
 
+
 -- evalLTL tests ----------------------------------------------------------
 prop_SPConstTrue :: Bool
 prop_SPConstTrue =
@@ -40,19 +41,21 @@ prop_NotIsInverse :: Str Bool -> Bool
 prop_NotIsInverse = evalLTL $ Not $ Not tautology
 
 -- ~(~phi ^ phi) == true.
-prop_AndContradictionAndTautologyContradiction :: Str Bool -> Str String -> Bool
-prop_AndContradictionAndTautologyContradiction boolStr1  =
-    evalLTL $ Not $ Not (mkSP boolStr1) `And` mkSP boolStr1
+prop_AndContradictionAndTautologyContradiction :: Str Bool -> Bool
+prop_AndContradictionAndTautologyContradiction = 
+    evalLTL (Not $ Not idSP `And` idSP)
+
+    -- evalLTL (Not $ Not idSP `And` idSP) boolStr1
 
 -- ~phi || phi.
-prop_OrContradictionAndTautologyContradiction :: Str Bool -> Str String-> Bool
-prop_OrContradictionAndTautologyContradiction boolStr1 =
-    evalLTL $ Not (mkSP boolStr1) `Or` mkSP boolStr1
+prop_OrContradictionAndTautologyContradiction :: Str Bool-> Bool
+prop_OrContradictionAndTautologyContradiction  =
+    evalLTL $ Not idSP `Or` idSP
 
 -- phi || T
-prop_OrTIsNeutral :: Str Bool -> Str String -> Bool
-prop_OrTIsNeutral boolStr1  =
-    evalLTL $ mkSP boolStr1 `Or` tautology
+prop_OrTIsNeutral :: Str Bool -> Bool
+prop_OrTIsNeutral =
+    evalLTL $ idSP `Or` tautology
 
 -- ~ (F -> T)
 prop_ImpliesGetsFalse :: Str String -> Bool
@@ -76,8 +79,7 @@ phiBox :: TPred Bool
 phiBox = SP id
 
 psiBox :: TPred Bool
-psiBox = Not phiBox
-
+psiBox = Not phiBoxgsp
 
 prop_ImminentlyMoves1 :: Bool
 prop_ImminentlyMoves1 = not phi4 && imminentPhi4
@@ -92,6 +94,8 @@ prop_ImminentlyMovesAPeriod = expected =~= actual
                         (fixedCyclicStr boolStep)
             actual = evalLTL' phiBox (fixedCyclicStr boolStep)
 
+
 return []
 runTests :: IO Bool
 runTests = $quickCheckAll
+

@@ -7,6 +7,9 @@ import Evaluators
 import Helpers
 import Rattus
 
+idSP :: TPred Bool 
+idSP = SP id
+
 type StrPred a = Str a -> Str Bool --SM
 
 data TPred a where
@@ -43,8 +46,4 @@ evalLTL formulae aStr = strHead (evalLTL' formulae aStr)
 
 tautology :: TPred a
 tautology = SP (\_ -> constStr True)
-
-mkSP :: Str Bool -> TPred a
-mkSP aStr = SP (const aStr)
-
 

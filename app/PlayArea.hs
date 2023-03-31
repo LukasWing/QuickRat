@@ -145,7 +145,11 @@ stackManip anInt = do
 prop_stackPushedIsPopped' anInt = 
     let (expectedInt, _) = runState (stackManip anInt) []
     in expectedInt == anInt
-
+    
+data Z = Z {a::Float, b::Float}
+genComplex = arbitrary >>= (\a -> 
+             arbitrary >>= (\b -> 
+             return Z {a=a, b=b}))
 run = do
     print $ addStuff "Hey"
     print $ twoCoins (mkStdGen 100)
