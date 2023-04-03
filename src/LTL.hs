@@ -42,7 +42,7 @@ evalLTL = evalLTL' 20 where
             And phi psi     -> eval phi aStr && eval psi aStr
             Implies phi psi -> eval (Not phi `Or` psi) aStr
             Imminently phi  -> evaln phi (adv t)
-            Eventually phi  -> eval phi aStr
+            Eventually phi  -> eval phi aStr || evaln (Eventually phi) (adv t) 
             Until phi psi   -> error "Not Implemented"
             Always phi      -> eval phi aStr && evaln (Always phi) (adv t)
             After anInt phi -> error "Not Implemented"
