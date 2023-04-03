@@ -26,14 +26,14 @@ data TPred a where
     Eventually  :: TPred a -> TPred a
     After       :: Int -> TPred a -> TPred a
 
-
 evalLTL :: TPred a -> Str a -> Bool
 evalLTL = evalLTL' 20 where
     evalLTL' :: Int -> TPred a -> Str a -> Bool
     evalLTL' checksLeft formulae aStr@(h ::: t) =
         checksLeft <= 0 ||
-        let evaln = evalLTL' (checksLeft - 1) 
+        let evalNext = evalLTL' (checksLeft - 1) 
             eval = evalLTL' checksLeft  
+            strTail = adv t
         in
         case formulae of
             SP aStrPred     -> aStrPred aStr
@@ -41,25 +41,11 @@ evalLTL = evalLTL' 20 where
             Or phi psi      -> eval phi aStr || eval psi aStr
             And phi psi     -> eval phi aStr && eval psi aStr
             Implies phi psi -> eval (Not phi `Or` psi) aStr
-            Imminently phi  -> evaln phi (adv t)
-            Eventually phi  -> eval phi aStr || evaln (Eventually phi) (adv t) 
-            Until phi psi   -> error "Not Implemented"
-            Always phi      -> eval phi aStr && evaln (Always phi) (adv t)
-            After anInt phi -> error "Not Implemented"
-
-checkLTL :: TPred a -> Str a -> Bool
-checkLTL aTPred aStr =
-    checkLTL' aTPred aStr (0::Int)
-    where
-        checkLTL' (Always phi) (h ::: t) counter =
-            evalLTL phi (h ::: t)
-            && counter > 20 -- eerr?
-            || checkLTL' (Always phi) (adv t) (counter + 1)
-        checkLTL' (Until phi psi) (h ::: t) counter =
-            evalLTL psi (h ::: t)
-            || evalLTL phi (h ::: t)
-            && (counter > 20
-                || checkLTL' (Until phi psi) (adv t) (counter + 1))
-
-        checkLTL' _ _ _ = False
+            Imminently phi  -> evalNext phi strTail
+            Eventually phi  -> eval phi aStr || evalNext (Eventually phi) strTail 
+            Until phi psi   -> eval psi aStr || (eval phi aStr && evalNext (phi `Until` psi) strTail)
+            Always phi      -> eval phi aStr && evalNext (Always phi) strTail
+            After anInt phi -> if anInt == 0 
+                                then eval phi aStr 
+                                else evalNext (After (anInt - 1) phi) strTail 
         

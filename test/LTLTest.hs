@@ -5,13 +5,13 @@ module LTLTest (runTests) where
 import Generators hiding (next)
 import Helpers
 import Test.QuickCheck
-import Rattus.Stream hiding (const)
+import Rattus.Stream hiding (const, zip)
 import qualified Rattus.Stream as RS hiding (const)
 import Rattus
 import qualified Data.Set as Set
 import Helpers
 import Evaluators
-import LTL 
+import LTL
 
 
 -- evalLTL tests ----------------------------------------------------------
@@ -34,7 +34,7 @@ idSP = SP (strHead)
 
 prop_NotIsInverse :: Str Bool -> Bool
 prop_NotIsInverse = evalLTL $ Not $ Not tautology
- 
+
 -- ~(~phi ^ phi) == true.
 prop_AndContradictionAndTautologyContradiction :: Str Bool -> Bool
 prop_AndContradictionAndTautologyContradiction =
@@ -58,23 +58,33 @@ prop_ImpliesGetsFalse =
 
 prop_Always ::  Bool
 prop_Always =
-    checkLTL (Always idSP) (constStr True)
+    evalLTL (Always idSP) (constStr True)
 
 prop_UntilAllTrue :: Bool
 prop_UntilAllTrue =
-    checkLTL (Until idSP idSP) (constStr True)
+    evalLTL (Until idSP idSP) (constStr True)
 
 prop_UntilPsiTrueAllTrue :: Bool
 prop_UntilPsiTrueAllTrue =
-    checkLTL (Until idSP $ Not (idSP)) (constStr True)
+    evalLTL (Until idSP $ Not idSP) (constStr True)
 
 prop_UntilPhiTrueAllTrue :: Bool
 prop_UntilPhiTrueAllTrue =
-    checkLTL (Until (Not idSP) idSP) (constStr True)
-    
+    evalLTL (Until (Not idSP) idSP) (constStr True)
+
 prop_UntilBothFalseGivesFalse :: Bool
 prop_UntilBothFalseGivesFalse =
-    not $ checkLTL (Until idSP idSP) (constStr False)
+    not $ evalLTL (Until idSP idSP) (constStr False)
+
+prop_UntilPhiTurnsOffThenPhi :: Property
+prop_UntilPhiTurnsOffThenPhi = 
+    forAll (arbitrary::Gen Int) $ \i ->
+    i >= 0 ==>  
+    let phiPart =  [j < i | j <- [0..i]]
+        psiPart =  [j == i | j <- [0..i]]
+        inStream = padFinite $ zip phiPart psiPart
+    in evalLTL (SP (fst . strHead) `Until` SP (snd . strHead)) inStream
+
 
 prop_EventuallyTrueGivesTrue :: Bool
 prop_EventuallyTrueGivesTrue =
@@ -105,8 +115,6 @@ prop_Eventually =
         let positive = (>=(0::Int)) in
         evalLTL $ Eventually $ SP (positive . strHead)
 
-
-
 boolStep :: [Bool]
 boolStep = [False, False, False, False, False, True, True, True, True, True]
 
@@ -115,6 +123,7 @@ phiBox = idSP
 
 psiBox :: TPred Bool
 psiBox = Not phiBox
+
 
 return []
 runTests :: IO Bool
