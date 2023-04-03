@@ -105,6 +105,8 @@ prop_Eventually =
         let positive = (>=(0::Int)) in
         evalLTL $ Eventually $ SP (positive . strHead)
 
+
+
 boolStep :: [Bool]
 boolStep = [False, False, False, False, False, True, True, True, True, True]
 

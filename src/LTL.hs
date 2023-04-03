@@ -31,7 +31,6 @@ evalLTL :: TPred a -> Str a -> Bool
 evalLTL = evalLTL' 20 where
     evalLTL' :: Int -> TPred a -> Str a -> Bool
     evalLTL' checksLeft formulae aStr@(h ::: t) =
-        
         checksLeft <= 0 ||
         let evaln = evalLTL' (checksLeft - 1) 
             eval = evalLTL' checksLeft  
@@ -43,7 +42,7 @@ evalLTL = evalLTL' 20 where
             And phi psi     -> eval phi aStr && eval psi aStr
             Implies phi psi -> eval (Not phi `Or` psi) aStr
             Imminently phi  -> evaln phi (adv t)
-            Eventually phi  -> eval phi aStr || evaln (Eventually phi) (adv t)
+            Eventually phi  -> eval phi aStr
             Until phi psi   -> error "Not Implemented"
             Always phi      -> eval phi aStr && evaln (Always phi) (adv t)
             After anInt phi -> error "Not Implemented"
@@ -63,6 +62,4 @@ checkLTL aTPred aStr =
                 || checkLTL' (Until phi psi) (adv t) (counter + 1))
 
         checkLTL' _ _ _ = False
-
-
-
+        
