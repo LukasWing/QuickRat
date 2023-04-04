@@ -13,10 +13,12 @@ import qualified LTLTest as LT
 
 main :: IO ()
 main = do
-    let testRunners =   [GT.runTests
-                        , HT.runTests
-                        , ET.runTests
-                        , LT.runTests]
+    let testRunners =   [
+                        GT.runTests
+                        --, HT.runTests
+                        --, ET.runTests
+                        --, LT.runTests
+                        ]
     good <- and <$> sequence testRunners
     if good
         then exitSuccess

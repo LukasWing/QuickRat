@@ -75,24 +75,27 @@ constOf value = Stamage {
     next = const $ constOf value
 }
 
-cycleOf :: ([a], Int) -> Stamage a 
+cycleOf :: ([a], Int) -> Stamage a
 cycleOf (aList, index) = Stamage {
     gen = return $ aList !! (index `mod` length aList),
     next = const $ cycleOf (aList, index + 1)
 }
 
-cycleOfStr :: ([a], Int) -> Stama a 
+cycleOfStr :: ([a], Int) -> Stama a
 cycleOfStr (aList, index) = Stama {
     genElem = aList !! (index `mod` length aList),
     nextStr = const $ cycleOfStr (aList, index + 1)
 }
-padStr :: ([a], Int) -> Stama a 
+padStr :: ([a], Int) -> Stama a
 padStr (aList, index) = Stama {
-    genElem = if index < length aList 
-                then aList !! index 
+    genElem = if index < length aList
+                then aList !! index
                 else last aList,
     nextStr = const $ padStr (aList, index + 1)
 }
+
+makeRoundRobin :: Arbitrary a => [Gen a] -> Gen a
+makeRoundRobin = head
 
 -- Stream Generators ----------------------------------------------------------
 oddEvenGen :: Gen (Str Int)
@@ -120,13 +123,7 @@ fixedCyclicStr :: [a] -> Str a
 fixedCyclicStr aList = stamageStr $ cycleOfStr (aList, 0)
 
 padFinite :: [a] -> Str a
-padFinite aList = stamageStr $ padStr (aList, 0) 
+padFinite aList = stamageStr $ padStr (aList, 0)
 
-
-
-
-
-
-
-
-
+roundRobin :: Arbitrary a => [Gen a] -> Gen a
+roundRobin = head   
