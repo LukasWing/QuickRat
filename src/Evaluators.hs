@@ -46,6 +46,11 @@ isAlternatingSM expectEven = Stamate{
                         else odd anInt,
     next = \_ -> isAlternatingSM (not expectEven)
 }
+isAlternatingAB ::Eq a => (a, a) -> Stamate a
+isAlternatingAB (current, next) = Stamate {
+    check = (current ==),
+    next = \_ -> isAlternatingAB (next, current)
+}
 
 
 -- Testables ------------------------------------------------------------------
@@ -76,6 +81,9 @@ allTrue aStr = stamateRun aStr $ isConstSM (Just True)
 
 allFalse :: Str Bool -> Bool
 allFalse aStr = stamateRun aStr $ isConstSM (Just False)
+
+alternatesAB :: Eq a => (a, a) -> Str a -> Bool
+alternatesAB ab aStr = stamateRun aStr $ isAlternatingAB ab 
 
 
 

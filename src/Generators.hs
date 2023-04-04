@@ -94,9 +94,13 @@ padStr (aList, index) = Stama {
     nextStr = const $ padStr (aList, index + 1)
 }
 
-makeRoundRobin :: Arbitrary a => [Gen a] -> Gen a
-makeRoundRobin = head
+makeRoundRobin :: [Gen a] -> Int -> Stamage a
+makeRoundRobin gens index = Stamage {
+    gen = gens !! index,
+    next = \_ -> makeRoundRobin gens $ (index + 1) `mod` length gens
+}
 
+-- [Gen a] -> Gen Str a
 -- Stream Generators ----------------------------------------------------------
 oddEvenGen :: Gen (Str Int)
 oddEvenGen = stamageGen oddEven
@@ -125,5 +129,5 @@ fixedCyclicStr aList = stamageStr $ cycleOfStr (aList, 0)
 padFinite :: [a] -> Str a
 padFinite aList = stamageStr $ padStr (aList, 0)
 
-roundRobin :: Arbitrary a => [Gen a] -> Gen a
-roundRobin = head   
+roundRobin :: [Gen a] -> Gen (Str a)
+roundRobin gens = stamageGen $ makeRoundRobin gens 0
