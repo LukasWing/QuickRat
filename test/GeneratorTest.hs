@@ -27,7 +27,7 @@ prop_isConst :: Property
 prop_isConst = forAll (constStrSM::Gen (Str (Int, Bool))) isConstCheck
 
 prop_roundRobin :: Property
-prop_roundRobin = forAll (roundRobin [return 0::Gen Int, return 1::Gen Int]) $ \value -> value == 2 || value == 1
+prop_roundRobin = forAll (roundRobin [return 0::Gen Int, return 1::Gen Int]) $ \value -> value == 0 || value == 1
 
 
 nonChatty :: Args
