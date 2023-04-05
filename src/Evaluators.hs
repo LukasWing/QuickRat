@@ -3,9 +3,10 @@ module Evaluators where
 import Generators hiding (next)
 import Helpers
 import Test.QuickCheck
-import Rattus.Stream
+import Rattus.Stream hiding (const)
 import Rattus
 import qualified Data.Set as Set
+import Control.Monad (join)
 
 -- Foundations ----------------------------------------------------------------
 data Stamate a = Stamate {
@@ -23,7 +24,6 @@ stamateRun aStr aStamate =
     in stamateRun' aStr aStamate nChecks
 
 -- State Machines -------------------------------------------------------------
-
 isUniqueSM :: (Ord a) => Set.Set a -> Stamate a
 isUniqueSM aSet = Stamate {
     check = \val -> not (Set.member val aSet),
@@ -46,6 +46,7 @@ isAlternatingSM expectEven = Stamate{
                         else odd anInt,
     next = \_ -> isAlternatingSM (not expectEven)
 }
+
 isAlternatingAB ::Eq a => (a, a) -> Stamate a
 isAlternatingAB (current, next) = Stamate {
     check = (current ==),
@@ -85,6 +86,11 @@ allFalse aStr = stamateRun aStr $ isConstSM (Just False)
 alternatesAB :: Eq a => (a, a) -> Str a -> Bool
 alternatesAB ab aStr = stamateRun aStr $ isAlternatingAB ab 
 
-
-
+strProbEq :: Eq a => Str a -> Str a -> Bool
+strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
+    where 
+        strProbEq' (h ::: t) = Stamate {
+            check = (== h),
+            next = const $ strProbEq' (adv t) 
+        } 
 

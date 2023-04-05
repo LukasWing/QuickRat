@@ -16,6 +16,9 @@ prop_seesAlternatingEvenOdd =
 prop_seesConst :: Int -> Bool
 prop_seesConst value = isConstCheck (constStr (value::Int))
 
+prop_strProbEqSameStrTrue :: Eq a => Str a -> Bool
+prop_strProbEqSameStrTrue aStr = aStr `strProbEq` aStr  
+
 return []
 runTests :: IO Bool
 runTests = $quickCheckAll
