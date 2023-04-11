@@ -11,11 +11,11 @@ import Rattus.Stream
 
 prop_alternatesEvenOdd :: Property
 prop_alternatesEvenOdd =
-    forAll evenOddGen $ \aStr -> alternatesEvenOdd aStr
+    forAll evenOddGen alternatesEvenOdd
 
 prop_alternatesOddEven :: Property
 prop_alternatesOddEven =
-    forAll oddEvenGen $ \aStr -> alternatesOddEven aStr
+    forAll oddEvenGen alternatesOddEven
 
 prop_isIncreasing :: Property
 prop_isIncreasing = forAll (increasingNums::Gen (Str Float)) areIncreasing
@@ -66,8 +66,3 @@ displayOnlyFailing aProperty = do
 return []
 runTests :: IO Bool
 runTests = $forAllProperties displayOnlyFailing
-
-
-
-
-

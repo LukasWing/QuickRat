@@ -48,4 +48,5 @@ evalLTL = evalLTL' 20 where
             After anInt phi -> if anInt == 0 
                                 then eval phi aStr 
                                 else evalNext (After (anInt - 1) phi) strTail 
-        
+            
+
