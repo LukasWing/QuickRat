@@ -14,6 +14,7 @@ import Rattus.Primitives
 import Debug.Trace
 import Rattus.Stream hiding (filter, map)
 import Helpers
+import LTL
 
 gcd' ::  Int -> Int -> Int
 gcd' a b
@@ -158,7 +159,7 @@ mapL :: Box (a -> b) -> O a -> O b
 mapL f inpF = delay (unbox f (adv inpF))
 
 traceTest :: Int -> Int
-traceTest a = 
+traceTest a =
     let f x = 3 * x in
     trace ("calling f with x = " ++ show a) (f (a::Int))
 runAsync = do
@@ -170,21 +171,59 @@ type CStrPred a = Str a -> Bool
 data CPred a where
     CSP          :: CStrPred a -> CPred a
     CNot         :: CPred a -> CPred a
+    CImminently  :: CPred a -> CPred a
     COr          :: CPred a -> CPred a -> CPred a
-    
+    CAnd         :: CPred a -> CPred a -> CPred a
+
+
 -- Mocked Example properties
 
 genStr :: CPred Int -> Gen (Str Int)
 genStr _ = arbitrary :: Gen (Str Int)
 
-sum10 :: Num a => Str a -> a 
-sum10  _ = -1
+genBoolStr :: CPred Bool -> Gen (Str Bool)
+genBoolStr _ = arbitrary :: Gen (Str Bool)
 
-prop_sumNPositivePositive:: Property
-prop_sumNPositivePositive =
-    forAll 
-        (genStr (CSP $ \aStr -> strHead aStr > (0::Int)))    
-        (\aStr -> sum10 aStr > 0)
+sum3 :: Num a => Str a -> a
+sum3  _ = -1
+
+prop_sum10PositivePositive:: Property
+prop_sum10PositivePositive =
+    let positiveHeadLTL = CSP ((>0) . strHead)
+        threePositive =
+            positiveHeadLTL
+            `CAnd` CImminently positiveHeadLTL
+            `CAnd` CImminently (CImminently positiveHeadLTL)
+    in
+    forAll
+        (genStr threePositive)
+        ((>0) . sum3)
+
+prop_sum10_3each_9total :: Property
+prop_sum10_3each_9total =
+    let threeHead = CSP ((==0) . strHead)
+        threeThrees =
+            threeHead
+            `CAnd` CImminently threeHead
+            `CAnd` CImminently (CImminently threeHead)
+    in
+    forAll
+        (genStr threeThrees)
+        ((==9) . sum3)
+
+-- perhaps test of imminently satisfying eventually?
+
+type Pressed = Bool
+type Light = Bool
+
+turnOn :: Str Pressed -> Str Light
+turnOn _ = constStr False
+
+prop_turnOn_ImminentlyPressed_ImminentlyLight :: Property
+prop_turnOn_ImminentlyPressed_ImminentlyLight =
+    forAll
+        (genBoolStr $ CImminently (CSP strHead))
+        (\pressedStr -> evalLTL (Imminently (SP strHead)) (turnOn pressedStr))
 
 run = do
     print $ addStuff "Hey"
@@ -194,19 +233,3 @@ run = do
     quickCheck prop_stackPushedIsPopped'
     runAsync
     print "Done"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
