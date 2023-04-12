@@ -47,14 +47,7 @@ prop_roundRobinAltOddEven =
 
 
 nonChatty :: Args
-nonChatty = Args {
-    chatty = False,
-    replay = replay stdArgs,
-    maxSuccess = maxSuccess stdArgs,
-    maxDiscardRatio = maxDiscardRatio stdArgs,
-    maxSize = maxSize stdArgs,
-    maxShrinks = maxShrinks stdArgs
-}
+nonChatty = stdArgs {chatty = False}
 
 displayOnlyFailing :: Property -> IO Result
 displayOnlyFailing aProperty = do

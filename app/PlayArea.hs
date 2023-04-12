@@ -10,9 +10,11 @@ module PlayArea(
 import Test.QuickCheck
 import Control.Monad.Writer
 import Generators
-import Data.Char 
+import Data.Char
 import System.Random
 import Control.Monad.State
+import Rattus.Primitives
+import Debug.Trace
 
 gcd' ::  Int -> Int -> Int
 gcd' a b
@@ -135,29 +137,51 @@ push' newElement = state $ \aStack -> ((), newElement:aStack)
 prop_stackPushedIsPopped anInt =
     let (_, newStack) = push anInt [] in
     let (expectedAnInt, _) = pop newStack in
-    anInt == expectedAnInt  
-    
+    anInt == expectedAnInt
+
 stackManip:: Int -> State Stack Int
 stackManip anInt = do
     push' anInt
     pop'
 
-prop_stackPushedIsPopped' anInt = 
+prop_stackPushedIsPopped' anInt =
     let (expectedInt, _) = runState (stackManip anInt) []
     in expectedInt == anInt
-    
+
 data Z = Z {a::Float, b::Float}
-genComplex = arbitrary >>= (\a -> 
-             arbitrary >>= (\b -> 
+genComplex = arbitrary >>= (\a ->
+             arbitrary >>= (\b ->
              return Z {a=a, b=b}))
+
+
+
+mapL :: Box (a -> b) -> O a -> O b
+mapL f inpF = delay (unbox f (adv inpF))
+
+traceTest :: Int -> Int
+traceTest a = 
+    let f x = 3 * x in
+    trace ("calling f with x = " ++ show a) (f (a::Int))
+
+
+
+runAsync = do
+    quickCheck $ \inpF -> adv (mapL (box id) (delay (inpF::Char))) == adv (delay inpF)
+    print (traceTest 2)
+    putStrLn "Run Async Done"
+
+
+
 run = do
     print $ addStuff "Hey"
     print $ twoCoins (mkStdGen 100)
     let (exp,_) = runState (stackManip 4) [7]
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
+    runAsync
     print "Done"
-    
+
+
 
 
 
