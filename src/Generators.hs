@@ -100,7 +100,6 @@ makeRoundRobin gens index = Stamage {
     next = \_ -> makeRoundRobin gens $ (index + 1) `mod` length gens
 }
 
--- [Gen a] -> Gen Str a
 -- Stream Generators ----------------------------------------------------------
 oddEvenGen :: Gen (Str Int)
 oddEvenGen = stamageGen oddEven

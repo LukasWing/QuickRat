@@ -1,20 +1,19 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
-module PlayArea(
-    run,
-    pop,
-    push,
-    Stack,
-    pop',
-    push'
-) where
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+module PlayArea where
 import Test.QuickCheck
 import Control.Monad.Writer
+    ( MonadWriter(writer), runWriter, Writer )
 import Generators
 import Data.Char
 import System.Random
 import Control.Monad.State
 import Rattus.Primitives
 import Debug.Trace
+import Rattus.Stream hiding (filter, map)
+import Helpers
 
 gcd' ::  Int -> Int -> Int
 gcd' a b
@@ -162,15 +161,30 @@ traceTest :: Int -> Int
 traceTest a = 
     let f x = 3 * x in
     trace ("calling f with x = " ++ show a) (f (a::Int))
-
-
-
 runAsync = do
     quickCheck $ \inpF -> adv (mapL (box id) (delay (inpF::Char))) == adv (delay inpF)
     print (traceTest 2)
     putStrLn "Run Async Done"
 
+type CStrPred a = Str a -> Bool
+data CPred a where
+    CSP          :: CStrPred a -> CPred a
+    CNot         :: CPred a -> CPred a
+    COr          :: CPred a -> CPred a -> CPred a
+    
+-- Mocked Example properties
 
+genStr :: CPred Int -> Gen (Str Int)
+genStr _ = arbitrary :: Gen (Str Int)
+
+sum10 :: Num a => Str a -> a 
+sum10  _ = -1
+
+prop_sumNPositivePositive:: Property
+prop_sumNPositivePositive =
+    forAll 
+        (genStr (CSP $ \aStr -> strHead aStr > (0::Int)))    
+        (\aStr -> sum10 aStr > 0)
 
 run = do
     print $ addStuff "Hey"

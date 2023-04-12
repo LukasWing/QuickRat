@@ -43,7 +43,7 @@ prop_roundRobinAltOddEven :: Property
 prop_roundRobinAltOddEven = 
     forAll 
         (roundRobin evenOddGenPair) 
-        alternatesEvenOdd 
+        alternatesEvenOdd
 
 
 nonChatty :: Args

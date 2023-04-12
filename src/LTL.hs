@@ -7,13 +7,14 @@ import Evaluators
 import Helpers
 import Rattus
 
-type StrPred a = Str a -> Bool -- SM
+type StrPred a = Str a -> Bool 
 
 tautology :: TPred a
 tautology = SP (const True)
 
 contradiction :: TPred a
 contradiction = SP (const False)
+
 data TPred a where
     SP          :: StrPred a -> TPred a
     Not         :: TPred a -> TPred a
@@ -29,7 +30,7 @@ data TPred a where
 evalLTL :: TPred a -> Str a -> Bool
 evalLTL = evalLTL' 20 where
     evalLTL' :: Int -> TPred a -> Str a -> Bool
-    evalLTL' checksLeft formulae aStr@(h ::: t) =
+    evalLTL' checksLeft formulae aStr@(_ ::: t) =
         checksLeft <= 0 ||
         let evalNext = evalLTL' (checksLeft - 1) 
             eval = evalLTL' checksLeft  
