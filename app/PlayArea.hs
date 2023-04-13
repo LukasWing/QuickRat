@@ -169,9 +169,12 @@ runAsync = do
 
 type CStrPred a = Str a -> Bool
 data CPred a where
+    CSPT         :: (Thread -> Bool) -> CPred Thread
     CSP          :: CStrPred a -> CPred a
     CNot         :: CPred a -> CPred a
     CImminently  :: CPred a -> CPred a
+    CAlways      :: CPred a -> CPred a
+    CEventually  :: CPred a -> CPred a
     COr          :: CPred a -> CPred a -> CPred a
     CAnd         :: CPred a -> CPred a -> CPred a
 
@@ -179,16 +182,23 @@ data CPred a where
 -- Mocked Example properties
 
 genStr :: CPred Int -> Gen (Str Int)
-genStr _ = arbitrary :: Gen (Str Int)
+genStr _ = arbitrary
 
 genBoolStr :: CPred Bool -> Gen (Str Bool)
-genBoolStr _ = arbitrary :: Gen (Str Bool)
+genBoolStr _ = arbitrary
+
+genThreadStr :: CPred Thread -> Gen Thread
+genThreadStr _ = arbitrary
+
+tupleGens :: Gen a -> Gen b -> Gen (a, b)
+tupleGens = liftM2 (,)
+
 
 sum3 :: Num a => Str a -> a
 sum3  _ = -1
 
-prop_sum10PositivePositive:: Property
-prop_sum10PositivePositive =
+prop_sum10_Positive_Positive:: Property
+prop_sum10_Positive_Positive =
     let positiveHeadLTL = CSP ((>0) . strHead)
         threePositive =
             positiveHeadLTL
@@ -219,11 +229,35 @@ type Light = Bool
 turnOn :: Str Pressed -> Str Light
 turnOn _ = constStr False
 
+
 prop_turnOn_ImminentlyPressed_ImminentlyLight :: Property
 prop_turnOn_ImminentlyPressed_ImminentlyLight =
     forAll
         (genBoolStr $ CImminently (CSP strHead))
-        (\pressedStr -> evalLTL (Imminently (SP strHead)) (turnOn pressedStr))
+        (evalLTL (Imminently (SP strHead)) . turnOn)
+
+-- CTRL ALT DELETE
+-- Always - eventually
+type Thread = Str (Bool, String)
+
+select :: Thread -> Thread -> Thread
+select t1 _ = t1
+
+prop_select_infinitelyActive_noDeadLock :: Property
+prop_select_infinitelyActive_noDeadLock =
+    forAll
+        (tupleGens
+            (genThreadStr $ CAlways (CEventually (CSPT (fst . strHead))))
+            (genThreadStr $ CAlways (CEventually (CSPT (fst . strHead))))
+        )
+        $ \(t1, t2) -> evalLTL
+                        (Always
+                            (Eventually
+                                (SP ((=="t1") . snd . strHead))
+                            )
+                        )
+                        (select t1 t2)
+
 
 run = do
     print $ addStuff "Hey"
