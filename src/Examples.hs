@@ -2,7 +2,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module PlayArea where
+module Examples where
 import Test.QuickCheck
 import Generators
 import Data.Char
@@ -12,6 +12,7 @@ import Rattus.Primitives
 import Rattus.Stream
 import Helpers
 import LTL
+import Evaluators
 
 type CStrPred a = Str a -> Bool
 data CPred a where
@@ -121,5 +122,30 @@ prop_negateFalse_eventuallyTrue_alwaysTrue =
         $ evalLTL (Always (SP strHead))
 
 
+or :: Stamage a -> Stamage a -> Stamage a
+or _ _ = error "Not implemented"
+
+next :: Gen a -> Stamage a -> Stamage a
+next _ _ = error "Not implemented"
+
+roundRobin :: [Gen a] -> Stamage a
+roundRobin _ = error "Not implemented"
+
+suchThat :: Stamage a -> TPred a -> Stamage a
+suchThat _ _ = error "Not implemented"
+
+until :: Stamage a -> Stamage a -> Stamage a
+until phi psi = error "Not implemented"
+        -- do
+        -- phiTip <- stamageGen phi
+        -- splitIndex <- arbitrary
+        -- rest <- stamageGen psi 
+        -- return (error "")
+
+eventually :: Stamage a -> Stamage a
+eventually phi = error "Not implemented" -- until arbitrary phi
+
+mkStamage :: TPred a -> Stamage a
+mkStamage _ = error "Not implemented"--something very similar to evalLTL.
 
 
