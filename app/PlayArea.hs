@@ -169,7 +169,7 @@ runAsync = do
 
 type CStrPred a = Str a -> Bool
 data CPred a where
-    CSPT         :: (Thread -> Bool) -> CPred Thread
+    CSPT         :: (Thread -> Bool) -> CPred (Bool, String)
     CSP          :: CStrPred a -> CPred a
     CNot         :: CPred a -> CPred a
     CImminently  :: CPred a -> CPred a
@@ -187,12 +187,8 @@ genStr _ = arbitrary
 genBoolStr :: CPred Bool -> Gen (Str Bool)
 genBoolStr _ = arbitrary
 
-genThreadStr :: CPred Thread -> Gen Thread
+genThreadStr :: CPred (Bool, String) -> Gen Thread
 genThreadStr _ = arbitrary
-
-tupleGens :: Gen a -> Gen b -> Gen (a, b)
-tupleGens = liftM2 (,)
-
 
 sum3 :: Num a => Str a -> a
 sum3  _ = -1
@@ -240,23 +236,31 @@ prop_turnOn_ImminentlyPressed_ImminentlyLight =
 -- Always - eventually
 type Thread = Str (Bool, String)
 
-select :: Thread -> Thread -> Thread
-select t1 _ = t1
+-- To do. round robin?
+schedule :: [Thread] -> Thread 
+schedule = head
+
+infinitelyActive :: CPred (Bool, b)
+infinitelyActive = CAlways
+                        (CEventually
+                            (CSP (fst . strHead))
+                        )
+
+isInfinitelyActive :: TPred (a, String)
+isInfinitelyActive = Always
+                        (Eventually
+                            (SP ((=="t1") . snd . strHead))
+                        )
 
 prop_select_infinitelyActive_noDeadLock :: Property
 prop_select_infinitelyActive_noDeadLock =
     forAll
-        (tupleGens
-            (genThreadStr $ CAlways (CEventually (CSPT (fst . strHead))))
-            (genThreadStr $ CAlways (CEventually (CSPT (fst . strHead))))
+        (liftM2
+            (\a b -> [a, b])
+            (genThreadStr infinitelyActive)
+            (genThreadStr infinitelyActive)
         )
-        $ \(t1, t2) -> evalLTL
-                        (Always
-                            (Eventually
-                                (SP ((=="t1") . snd . strHead))
-                            )
-                        )
-                        (select t1 t2)
+        $ evalLTL isInfinitelyActive . schedule 
 
 
 run = do
