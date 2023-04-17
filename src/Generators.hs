@@ -21,9 +21,24 @@ instance (Arbitrary a) => Arbitrary (Str a) where
         return $ x:::delay xs
 
 data Stamage a = Stamage {
-    gen:: Gen a,
-    next:: a -> Stamage a
+    gen :: Gen a,
+    next :: a -> Stamage a
 }
+
+prependStamage :: Stamage a -> a -> Stamage a
+prependStamage aStamage element = Stamage {
+    gen = return element,
+    next = const aStamage
+}
+
+prependNStamage :: Stamage a -> [a] -> Stamage a
+prependNStamage aStamage aList =
+    let stamages = iterate 
+            (\(prev, n) -> (prependStamage prev (aList !! (n-1)), n-1)) 
+            (aStamage, length aList)
+    in fst (stamages !! (length aList))
+
+
 
 stamageGen :: Stamage a -> Gen (Str a)
 stamageGen aStamage = do
@@ -61,6 +76,12 @@ uniqueSM ::  (Arbitrary a, Ord a) => Set.Set a -> Stamage a
 uniqueSM acc = Stamage {
     gen = arbitrary `suchThat`  (\n -> not (Set.member n acc)),
     next = \e -> uniqueSM $ Set.insert e acc
+}
+
+arbitraryStamage :: (Arbitrary a, Num a) => Stamage a
+arbitraryStamage  = Stamage {
+    gen = arbitrary,
+    next = const arbitraryStamage
 }
 
 constSM :: (Arbitrary a) => Maybe a -> Stamage a

@@ -69,6 +69,7 @@ test-suite HaskellSandbox-test
   main-is: Spec.hs
   other-modules:
       EvaluatorTest
+      ExamplesTest
       GeneratorTest
       HelpersTest
       LTLTest

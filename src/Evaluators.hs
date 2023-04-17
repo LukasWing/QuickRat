@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 module Evaluators where
-import Generators hiding (next)
+import qualified Generators as G
 import Helpers
 import Test.QuickCheck
 import Rattus.Stream hiding (const)
@@ -22,6 +22,18 @@ stamateRun aStr aStamate =
             && stamateRun' (adv t) (next aStamate' h) (pred checksLeft)
         nChecks = 20
     in stamateRun' aStr aStamate nChecks
+
+stamateRunStamage :: G.Stamage a -> Stamate a -> Bool
+stamateRunStamage  aStamage aStamate =
+    let stamateRunStamage' aStamage' aStamate' checksLeft =
+            checksLeft == 0
+            || check aStamate' h
+            && stamateRunStamage' t (next aStamate' h) (pred checksLeft)
+            where h = G.gen aStamage'
+                  t = G.next aStamage' h
+
+        nChecks = 20
+    in stamateRunStamage' aStamage aStamate nChecks
 
 -- State Machines -------------------------------------------------------------
 isUniqueSM :: (Ord a) => Set.Set a -> Stamate a

@@ -5,7 +5,7 @@ module GeneratorTest (
 ) where
 import Generators hiding (next)
 import Evaluators
-import Helpers ()
+import Helpers (strGet, strHead, strTake)
 import Test.QuickCheck
 import Rattus.Stream
 
@@ -45,9 +45,20 @@ prop_roundRobinAltOddEven =
         (roundRobin evenOddGenPair) 
         alternatesEvenOdd
 
+prop_prependStamage_anyAppend_sameOut :: Property
+prop_prependStamage_anyAppend_sameOut = 
+    forAll 
+        (stamageGen $ prependStamage (constOf (2::Int)) 3)
+        $ \aStr -> strTake 5 aStr  == [3, 2, 2, 2, 2];  
 
+prop_prependNStamage_fixedAppend_listAppended :: Property
+prop_prependNStamage_fixedAppend_listAppended = 
+    forAll 
+        (stamageGen $ prependNStamage (arbitraryStamage :: Stamage Int) [3, 3])
+        $ \aStr -> strTake 2 aStr  == [3, 3];
+        
 nonChatty :: Args
-nonChatty = stdArgs {chatty = False}
+nonChatty = stdArgs {chatty = True}
 
 displayOnlyFailing :: Property -> IO Result
 displayOnlyFailing aProperty = do
@@ -55,6 +66,7 @@ displayOnlyFailing aProperty = do
     case result of
         Success {} -> return result
         _ ->  quickCheckResult aProperty
+
 
 return []
 runTests :: IO Bool
