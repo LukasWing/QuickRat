@@ -8,6 +8,7 @@ import Control.Monad.Writer
     ( MonadWriter(writer), runWriter, Writer )
 import Generators
 import Data.Char
+import Examples
 import System.Random
 import Control.Monad.State
 import Rattus.Primitives
@@ -175,4 +176,5 @@ run = do
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     runAsync
+    sample (stamageGen ((Examples.until (return (2::Int)) evenOdd)))
     print "Done"

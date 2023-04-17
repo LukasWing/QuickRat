@@ -18,6 +18,12 @@ prop_next_EvenOddPrependendEven_nextEvenOddHolds =
     forAll 
         (stamageGen (next (return 2) evenOdd))
         $ \(h ::: orig) -> alternatesEvenOdd (adv orig) && h == 2 
+prop_until :: Property 
+prop_until = 
+    forAll 
+        (stamageGen (Examples.until (return (2::Int)) evenOdd))
+        $ \s -> (collect (s::Str Int) (\_ -> s =~= (s::Str Int)))
+
 
 
 return []

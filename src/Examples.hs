@@ -138,13 +138,22 @@ roundRobin _ = error "Not implemented"
 suchThat :: Stamage a -> TPred a -> Stamage a
 suchThat _ _ = error "Not implemented"
 
-until :: Stamage a -> Stamage a -> Stamage a
-until phi psi = error "Not implemented"
-        -- do
-        -- phiTip <- stamageGen phi
-        -- splitIndex <- arbitrary
-        -- rest <- stamageGen psi 
-        -- return (error "")
+until :: Gen a -> Stamage a -> Stamage a
+until tipGen psi =
+    let st1 = Stamage {
+                gen = tipGen,
+                Generators.next = const psi
+        }
+        st2 = Stamage {
+               gen = tipGen,
+               Generators.next = const st1
+        }
+    in Stamage {
+               gen = tipGen,
+               Generators.next = const st2
+        }
+        
+
 
 eventually :: Stamage a -> Stamage a
 eventually phi = error "Not implemented" -- until arbitrary phi
