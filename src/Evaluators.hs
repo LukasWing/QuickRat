@@ -23,18 +23,6 @@ stamateRun aStr aStamate =
         nChecks = 20
     in stamateRun' aStr aStamate nChecks
 
-stamateRunStamage :: G.Stamage a -> Stamate a -> Bool
-stamateRunStamage  aStamage aStamate =
-    let stamateRunStamage' aStamage' aStamate' checksLeft =
-            checksLeft == 0
-            || check aStamate' h
-            && stamateRunStamage' t (next aStamate' h) (pred checksLeft)
-            where h = G.gen aStamage'
-                  t = G.next aStamage' h
-
-        nChecks = 20
-    in stamateRunStamage' aStamage aStamate nChecks
-
 -- State Machines -------------------------------------------------------------
 isUniqueSM :: (Ord a) => Set.Set a -> Stamate a
 isUniqueSM aSet = Stamate {

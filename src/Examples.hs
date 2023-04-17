@@ -9,7 +9,7 @@ import Data.Char
 import System.Random
 import Control.Monad.State
 import Rattus.Primitives
-import Rattus.Stream
+import Rattus.Stream hiding (const)
 import Helpers
 import LTL
 import Evaluators
@@ -114,7 +114,7 @@ prop_schedule_infinitelyActive_noDeadLock =
 
 negateFalse :: Str Bool -> Str Bool
 negateFalse = Rattus.Stream.map (box $ \b -> b || not b)
-                        
+
 prop_negateFalse_eventuallyTrue_alwaysTrue :: Property
 prop_negateFalse_eventuallyTrue_alwaysTrue =
     forAll
@@ -126,7 +126,11 @@ or :: Stamage a -> Stamage a -> Stamage a
 or _ _ = error "Not implemented"
 
 next :: Gen a -> Stamage a -> Stamage a
-next _ _ = error "Not implemented"
+next element aStamage = Stamage {
+    gen = element,
+    Generators.next = const aStamage
+}
+
 
 roundRobin :: [Gen a] -> Stamage a
 roundRobin _ = error "Not implemented"

@@ -9,17 +9,16 @@ import Helpers
 import Test.QuickCheck
 import Examples
 import Rattus.Stream
-import Evaluators (stamateRunStamage)
-
-stamateIsAlternating :: Stamate Int -> Bool
-stamateIsAlternating aStamate = stamateRunStamage aStamate isAlternatingSM
+import Rattus
+-- stamateIsAlternating :: Stamate Int -> Bool
+-- stamateIsAlternating aStamate = stamateRunStamage aStamate isAlternatingSM
 
 prop_next_EvenOddPrependendEven_nextEvenOddHolds :: Property
 prop_next_EvenOddPrependendEven_nextEvenOddHolds =
     forAll 
-        (return (2::Int))
-        $ \gen ->   let actual = next (return gen) evenOdd
-                    in isAlternatingSM True
+        (stamageGen (next (return 2) evenOdd))
+        $ \(h ::: orig) -> alternatesEvenOdd (adv orig) && h == 2 
+
 
 return []
 runTests :: IO Bool
