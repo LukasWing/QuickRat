@@ -10,20 +10,39 @@ import Test.QuickCheck
 import Examples
 import Rattus.Stream
 import Rattus
+import LTL
 -- stamateIsAlternating :: Stamate Int -> Bool
 -- stamateIsAlternating aStamate = stamateRunStamage aStamate isAlternatingSM
 
 prop_next_EvenOddPrependendEven_nextEvenOddHolds :: Property
 prop_next_EvenOddPrependendEven_nextEvenOddHolds =
-    forAll 
+    forAll
         (stamageGen (next (return 2) evenOdd))
-        $ \(h ::: orig) -> alternatesEvenOdd (adv orig) && h == 2 
-prop_until :: Property 
-prop_until = 
-    forAll 
-        (stamageGen (Examples.until (return (2::Int)) evenOdd))
-        $ \s -> (collect (s::Str Int) (\_ -> s =~= (s::Str Int)))
+        $ \(h ::: orig) -> alternatesEvenOdd (adv orig) && h == 2
 
+threeUntilEvenOdd :: TPred Int
+threeUntilEvenOdd = SP ((==3) . strHead) `Until` SP alternatesEvenOdd
+
+prop_until_threeUntilEvenOdd :: Property
+prop_until_threeUntilEvenOdd =
+    forAll
+        (stamageGen (Examples.until (return (3::Int)) 5 evenOdd))
+        $ evalLTL threeUntilEvenOdd
+
+prop_until_anyIntUntilSomeStr :: Property
+prop_until_anyIntUntilSomeStr =
+    forAll
+        (stamageGen (Examples.until (choose (minVal, maxVal)) 5 evenOdd))
+        $ evalLTL $ SP (inBounds . strHead) `Until` SP alternatesEvenOdd
+    where minVal = -10
+          maxVal = 10  
+          inBounds i = i >= minVal && i <= maxVal
+
+prop_eventually_randomToEvenOdd_LTLFits :: Property
+prop_eventually_randomToEvenOdd_LTLFits = 
+    forAll 
+        (stamageGen (Examples.eventually 5 evenOdd))
+        $ evalLTL $ Eventually $ SP alternatesEvenOdd
 
 
 return []

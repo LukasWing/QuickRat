@@ -131,32 +131,17 @@ next element aStamage = Stamage {
     Generators.next = const aStamage
 }
 
-
 roundRobin :: [Gen a] -> Stamage a
 roundRobin _ = error "Not implemented"
 
 suchThat :: Stamage a -> TPred a -> Stamage a
 suchThat _ _ = error "Not implemented"
 
-until :: Gen a -> Stamage a -> Stamage a
-until tipGen psi =
-    let st1 = Stamage {
-                gen = tipGen,
-                Generators.next = const psi
-        }
-        st2 = Stamage {
-               gen = tipGen,
-               Generators.next = const st1
-        }
-    in Stamage {
-               gen = tipGen,
-               Generators.next = const st2
-        }
-        
+until :: Gen a -> Int -> Stamage a -> Stamage a
+until tipGen count = applyN count (Examples.next tipGen) -- how to remove count.
 
-
-eventually :: Stamage a -> Stamage a
-eventually phi = error "Not implemented" -- until arbitrary phi
+eventually :: forall a. (Arbitrary a) => Int -> Stamage a -> Stamage a
+eventually count = applyN count (Examples.next (arbitrary :: Gen a)) -- until arbitrary phi
 
 mkStamage :: TPred a -> Stamage a
 mkStamage _ = error "Not implemented"--something very similar to evalLTL.

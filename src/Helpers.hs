@@ -39,3 +39,5 @@ allSuffix :: Str a ->  [Str a]
 allSuffix lst = error "Not implemented"
 
 
+applyN :: Int -> (a -> a) -> a -> a
+applyN n f = (!! n ) . iterate f

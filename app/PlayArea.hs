@@ -176,5 +176,5 @@ run = do
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     runAsync
-    sample (stamageGen ((Examples.until (return (2::Int)) evenOdd)))
+    sample (stamageGen (Examples.until (return (2::Int)) 6 evenOdd))
     print "Done"
