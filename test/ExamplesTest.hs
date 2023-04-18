@@ -11,8 +11,6 @@ import Examples
 import Rattus.Stream
 import Rattus
 import LTL
--- stamateIsAlternating :: Stamate Int -> Bool
--- stamateIsAlternating aStamate = stamateRunStamage aStamate isAlternatingSM
 
 prop_next_EvenOddPrependendEven_nextEvenOddHolds :: Property
 prop_next_EvenOddPrependendEven_nextEvenOddHolds =
@@ -52,7 +50,11 @@ prop_roundRobin_Gen1AndGen2_OutPutIsEvenOdd =
     where   inputEven = fmap (*(2::Int)) arbitrary
             inputOdd  = fmap (\i -> i * 2 + 1) arbitrary  
           
-
+prop_or_OorK_OorKisOkay :: Property
+prop_or_OorK_OorKisOkay =  
+    forAll 
+        (stamageGen (Examples.or True (constOf 'O') (constOf 'K')))
+        $ evalLTL $ SP ((=='O') . strHead) `Or` SP ((=='K') . strHead)
 
 return []
 runTests :: IO Bool

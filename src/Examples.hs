@@ -122,8 +122,10 @@ prop_negateFalse_eventuallyTrue_alwaysTrue =
         $ evalLTL (Always (SP strHead))
 
 
-or :: Stamage a -> Stamage a -> Stamage a
-or luckyStamage _unluckyStamage = luckyStamage
+or :: Bool -> Stamage a -> Stamage a -> Stamage a
+or pickFirst firstStamage secondStamage = if pickFirst 
+                                            then firstStamage 
+                                            else secondStamage
 
 next :: Gen a -> Stamage a -> Stamage a
 next element aStamage = Stamage {
@@ -132,22 +134,21 @@ next element aStamage = Stamage {
 }
 
 roundRobin :: [Gen a] -> Stamage a
-roundRobin generatorList = roundRobin' generatorList 0 
-    where 
-        roundRobin' :: [Gen a] -> Int -> Stamage a
-        roundRobin' gens index = Stamage {
-            gen = gens !! index,
-            Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
-        }
-
-suchThat :: Stamage a -> TPred a -> Stamage a
-suchThat _ _ = error "Not implemented"
+roundRobin generatorList =
+    let roundRobin' gens index = Stamage {
+        gen = gens !! index,
+        Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
+    }
+    in roundRobin' generatorList 0 
 
 until :: Gen a -> Int -> Stamage a -> Stamage a
 until tipGen count = applyN count (Examples.next tipGen) -- how to remove count.
 
 eventually :: forall a. (Arbitrary a) => Int -> Stamage a -> Stamage a
 eventually count = applyN count (Examples.next (arbitrary :: Gen a)) -- until arbitrary phi
+
+suchThat :: Stamage a -> TPred a -> Stamage a
+suchThat _ _ = error "Not implemented"
 
 mkStamage :: TPred a -> Stamage a
 mkStamage _ = error "Not implemented"--something very similar to evalLTL.
