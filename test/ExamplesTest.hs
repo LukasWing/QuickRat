@@ -44,6 +44,15 @@ prop_eventually_randomToEvenOdd_LTLFits =
         (stamageGen (Examples.eventually 5 evenOdd))
         $ evalLTL $ Eventually $ SP alternatesEvenOdd
 
+prop_roundRobin_Gen1AndGen2_OutPutIsEvenOdd :: Property 
+prop_roundRobin_Gen1AndGen2_OutPutIsEvenOdd =
+    forAll
+        (stamageGen (Examples.roundRobinSt [inputEven, inputOdd]))
+        $ evalLTL $ SP alternatesEvenOdd
+    where   inputEven = fmap (*(2::Int)) arbitrary
+            inputOdd  = fmap (\i -> i * 2 + 1) arbitrary  
+          
+
 
 return []
 runTests :: IO Bool

@@ -131,8 +131,14 @@ next element aStamage = Stamage {
     Generators.next = const aStamage
 }
 
-roundRobin :: [Gen a] -> Stamage a
-roundRobin _ = error "Not implemented"
+roundRobinSt :: [Gen a] -> Stamage a
+roundRobinSt gens = roundRobinSt' gens 0 
+    where 
+        roundRobinSt' :: [Gen a] -> Int -> Stamage a
+        roundRobinSt' gens index = Stamage {
+            gen = gens !! index,
+            Generators.next = \_ -> roundRobinSt' gens $ (index + 1) `mod` length gens
+        }
 
 suchThat :: Stamage a -> TPred a -> Stamage a
 suchThat _ _ = error "Not implemented"
