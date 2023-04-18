@@ -123,7 +123,7 @@ prop_negateFalse_eventuallyTrue_alwaysTrue =
 
 
 or :: Stamage a -> Stamage a -> Stamage a
-or _ _ = error "Not implemented"
+or luckyStamage _unluckyStamage = luckyStamage
 
 next :: Gen a -> Stamage a -> Stamage a
 next element aStamage = Stamage {
@@ -131,13 +131,13 @@ next element aStamage = Stamage {
     Generators.next = const aStamage
 }
 
-roundRobinSt :: [Gen a] -> Stamage a
-roundRobinSt gens = roundRobinSt' gens 0 
+roundRobin :: [Gen a] -> Stamage a
+roundRobin generatorList = roundRobin' generatorList 0 
     where 
-        roundRobinSt' :: [Gen a] -> Int -> Stamage a
-        roundRobinSt' gens index = Stamage {
+        roundRobin' :: [Gen a] -> Int -> Stamage a
+        roundRobin' gens index = Stamage {
             gen = gens !! index,
-            Generators.next = \_ -> roundRobinSt' gens $ (index + 1) `mod` length gens
+            Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
         }
 
 suchThat :: Stamage a -> TPred a -> Stamage a

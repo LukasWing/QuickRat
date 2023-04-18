@@ -47,7 +47,7 @@ prop_eventually_randomToEvenOdd_LTLFits =
 prop_roundRobin_Gen1AndGen2_OutPutIsEvenOdd :: Property 
 prop_roundRobin_Gen1AndGen2_OutPutIsEvenOdd =
     forAll
-        (stamageGen (Examples.roundRobinSt [inputEven, inputOdd]))
+        (stamageGen (Examples.roundRobin [inputEven, inputOdd]))
         $ evalLTL $ SP alternatesEvenOdd
     where   inputEven = fmap (*(2::Int)) arbitrary
             inputOdd  = fmap (\i -> i * 2 + 1) arbitrary  
