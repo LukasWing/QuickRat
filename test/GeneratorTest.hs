@@ -10,6 +10,8 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
+import Control.Applicative (liftA)
+import Data.Bits
 
 prop_alternatesEvenOdd :: Property
 prop_alternatesEvenOdd =
@@ -36,31 +38,40 @@ prop_roundRobinConstHey = forAll (roundRobin [return "hey"]) isConstCheck
 
 
 evenOddGenPair :: [Gen Int]
-evenOddGenPair = [ 
-        oneof $ Prelude.map return [-1000, -998 .. 1000], 
+evenOddGenPair = [
+        oneof $ Prelude.map return [-1000, -998 .. 1000],
         oneof $ Prelude.map return [-999, -997 .. 999]
     ]
 
 prop_roundRobinAltOddEven :: Property
-prop_roundRobinAltOddEven = 
-    forAll 
-        (roundRobin evenOddGenPair) 
+prop_roundRobinAltOddEven =
+    forAll
+        (roundRobin evenOddGenPair)
         alternatesEvenOdd
 
 prop_prependStamage_anyAppend_sameOut :: Property
-prop_prependStamage_anyAppend_sameOut = 
-    forAll 
+prop_prependStamage_anyAppend_sameOut =
+    forAll
         (stamageGen $ prependStamage (constOf (2::Int)) 3)
-        $ \aStr -> strTake 5 aStr  == [3, 2, 2, 2, 2];  
+        $ \aStr -> strTake 5 aStr  == [3, 2, 2, 2, 2];
 
 prop_prependNStamage_fixedAppend_listAppended :: Property
-prop_prependNStamage_fixedAppend_listAppended = 
-    forAll 
+prop_prependNStamage_fixedAppend_listAppended =
+    forAll
         (stamageGen $ prependNStamage (arbitraryStamage :: Stamage Int) [3, 3])
         $ \aStr -> strTake 2 aStr  == [3, 3];
-        
-nonChatty :: Args
-nonChatty = stdArgs {chatty = True}
+
+
+
+
+hasHead :: (Eq p) => p -> TPred p
+hasHead expectedHead = SP ((==expectedHead) . strHead)
+
+satisfies :: Show a => StamageP a -> TPred a -> Property
+aStamage `satisfies` anLTL =
+    forAll
+        (stamagePGen aStamage)
+        $ evalLTL anLTL
 
 prop_next_EvenOddPrependendEven_nextEvenOddHolds :: Property
 prop_next_EvenOddPrependendEven_nextEvenOddHolds =
@@ -69,49 +80,54 @@ prop_next_EvenOddPrependendEven_nextEvenOddHolds =
         $ \(h ::: orig) -> alternatesEvenOdd (adv orig) && h == 2
 
 threeUntilEvenOdd :: TPred Int
-threeUntilEvenOdd = SP ((==3) . strHead) `Until` SP alternatesEvenOdd
+threeUntilEvenOdd = hasHead (3::Int) `Until` SP alternatesEvenOdd
 
 prop_untilP_threeUntilEvenOdd :: Property
 prop_untilP_threeUntilEvenOdd =
-    forAll
-        (stamagePGen (untilP (return (3::Int))  evenOddP))
-        $ evalLTL threeUntilEvenOdd
+    return (3::Int) `untilP` evenOddP `satisfies` threeUntilEvenOdd
+
 
 prop_untilP_anyIntUntilSomeStr :: Property
 prop_untilP_anyIntUntilSomeStr =
-    forAll
-        (stamagePGen (untilP (choose (minVal, maxVal)) evenOddP))
-        $ evalLTL $ SP (inBounds . strHead) `Until` SP alternatesEvenOdd
+    satisfies
+       (choose (minVal, maxVal) `untilP` evenOddP)
+       $ SP (inBounds . strHead) `Until` SP alternatesEvenOdd
     where minVal = -10
-          maxVal = 10  
+          maxVal = 10
           inBounds i = i >= minVal && i <= maxVal
 
-
 prop_eventuallyP_randomToEvenOdd_LTLFits :: Property
-prop_eventuallyP_randomToEvenOdd_LTLFits = 
-    forAll 
-        (stamagePGen (eventuallyP evenOddP))
-        $ evalLTL $ Eventually $ SP alternatesEvenOdd
+prop_eventuallyP_randomToEvenOdd_LTLFits =
+    satisfies
+        (eventuallyP evenOddP)
+        $ Eventually $ SP alternatesEvenOdd
 
-prop_roundRobinP_Gen1AndGen2_OutPutIsEvenOdd :: Property 
+prop_roundRobinP_Gen1AndGen2_OutPutIsEvenOdd :: Property
 prop_roundRobinP_Gen1AndGen2_OutPutIsEvenOdd =
-    forAll
-        (stamagePGen (roundRobinP [inputEven, inputOdd]))
-        $ evalLTL $ SP alternatesEvenOdd
-    where   inputEven = fmap (*(2::Int)) arbitrary
-            inputOdd  = fmap (\i -> i * 2 + 1) arbitrary  
-          
+    satisfies
+        (roundRobinP $ sequenceA [fmap (*(2::Int)), fmap (.|. 1)] arbitrary)
+        $ SP alternatesEvenOdd
+
 prop_orP_OorK_OorKisOkay :: Property
-prop_orP_OorK_OorKisOkay =  
-    forAll 
-        (stamagePGen (orP (constOfP 'O') (constOfP 'K')))
-        $ evalLTL $ SP ((=='O') . strHead) `Or` SP ((=='K') . strHead)
+prop_orP_OorK_OorKisOkay =
+    satisfies
+        (constOfP 'O' `orP` constOfP 'K')
+        $ hasHead 'O' `Or` hasHead 'K'
 
 prop_suchThatP_1111or2222suchThatEven_2222 :: Property
-prop_suchThatP_1111or2222suchThatEven_2222 = 
-    forall
-        (stamagePGen $ (constOfP 1) `orP` (constOfP 2) `suchThatP` SP (even . headStr))
-        $ evalLTL $ Always $ SP ((==1) . strHead) 
+prop_suchThatP_1111or2222suchThatEven_2222 =
+    satisfies
+        (constOfP 1 `orP` constOfP 2 `suchThatP` SP (even . strHead))
+        $ Always $ hasHead (1::Int)
+
+prop_suchThatP_evensOrOddssuchThatEven_Evens :: Property
+prop_suchThatP_evensOrOddssuchThatEven_Evens =
+    satisfies
+        (constOfP 1 `orP` constOfP 2 `suchThatP` SP (even . strHead))
+        $ Always $ hasHead (1::Int)
+
+nonChatty :: Args
+nonChatty = stdArgs {chatty = True}
 
 displayOnlyFailing :: Property -> IO Result
 displayOnlyFailing aProperty = do
@@ -119,7 +135,6 @@ displayOnlyFailing aProperty = do
     case result of
         Success {} -> return result
         _ ->  quickCheckResult aProperty
-
 
 return []
 runTests :: IO Bool
