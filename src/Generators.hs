@@ -12,6 +12,8 @@ import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
 import System.Posix.Internals (statGetType)
+import Data.Foldable (Foldable(length))
+import GHC.Show (asciiTab)
 
 -- Foundations -------------------------------------------------------------
 instance (Arbitrary a) => Arbitrary (Str a) where
@@ -184,25 +186,27 @@ nextP nextGen aStamageP =
         return (tip, aStamageP)
 
 untilP :: Gen a -> StamageP a -> StamageP a
-untilP tipGen aStamageP = Next $ do
+untilP tipGen aStamageP = 
+    Next $ do
         nPrepends <- abs <$> (arbitrary :: Gen Int)
         let Next aGenStamage = applyN nPrepends (nextP tipGen) aStamageP
         aGenStamage
 
 
 roundRobinP :: [Gen a] -> StamageP a
-roundRobinP _ = error "Not implemented"
--- roundRobinP generatorList =
---     let roundRobin' gens index = Stamage {
---         gen = gens !! index,
---         Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
---     }
---     in roundRobin' generatorList 0 
+roundRobinP gens =
+    let roundRobinP' gens' index = Next $ do
+            value <- gens !! index
+            let nextIndex = (index + 1) `mod` length gens'
+            return (value, roundRobinP' gens' nextIndex)
+    in roundRobinP' gens 0
 
 eventuallyP :: forall a. (Arbitrary a) => StamageP a -> StamageP a
-eventuallyP _ = error "Not implemented"
--- eventuallyP count = applyN count (Examples.next (arbitrary :: Gen a)) -- until arbitrary phi
-
+eventuallyP aStamageP = 
+    Next $ do
+        nPrepends <- elements [0..10] 
+        let Next aGenStamage = applyN nPrepends (nextP arbitrary) aStamageP
+        aGenStamage
 
 orP :: StamageP a -> StamageP a -> StamageP a
 orP firstStamage secondStamage = Next $ do
