@@ -12,6 +12,7 @@ import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
 import LTL
+import Data.Map (valid)
 
 -- Foundations -------------------------------------------------------------
 instance (Arbitrary a) => Arbitrary (Str a) where
@@ -20,141 +21,49 @@ instance (Arbitrary a) => Arbitrary (Str a) where
         xs <- arbitrary::Gen (Str a)
         return $ x:::delay xs
 
-data Stamage a = Stamage {
-    gen :: Gen a,
-    next :: a -> Stamage a
-}
-
-prependStamage :: Stamage a -> a -> Stamage a
-prependStamage aStamage element = Stamage {
-    gen = return element,
-    next = const aStamage
-}
-
-prependNStamage :: Stamage a -> [a] -> Stamage a
-prependNStamage aStamage aList =
-    let stamages = iterate
-            (\(prev, n) -> (prependStamage prev (aList !! (n-1)), n-1))
-            (aStamage, length aList)
-    in fst (stamages !! (length aList))
-
-
-
-stamageGen :: Stamage a -> Gen (Str a)
-stamageGen aStamage = do
-    v <- gen aStamage
-    t <- stamageGen (next aStamage v)
-    return $ v ::: delay t
-
-data Stama a = Stama {
-    genElem:: a,
-    nextStr:: a -> Stama a
-}
-
-stamageStr :: Stama a -> Str a
-stamageStr aStama = v ::: delay t
-    where   v = genElem aStama
-            t = stamageStr (nextStr aStama v)
-
+type Stamage a = StamageP a
+newtype StamageP a = Next (Gen (a, StamageP a))
+stamagePGen :: StamageP a -> Gen (Str a)
+stamagePGen (Next aGen) = do
+    (value, aStamageP) <- aGen
+    rest <- stamagePGen aStamageP
+    return $ value ::: delay rest
 
 -- State Machines ------------------------------------------------------------
-increasingSM :: (Arbitrary a, Num a) => a -> Stamage a
-increasingSM current = Stamage {
-    gen = do
-        addend <- arbitrary
-        return (current + abs addend),
-    next = \prev' -> increasingSM (prev' + current)
-}
+arbitraryStamageP :: (Arbitrary a, Num a) => Stamage a
+arbitraryStamageP = error "Not Implemented"
 
-oddEven :: Stamage Int
-oddEven = Stamage {gen = (.|. 1) <$> (arbitrary:: Gen Int), next = const evenOdd}
+cycleOfP :: ([a], Int) -> Stamage a
+cycleOfP = error "Not Implemented"
 
-evenOdd :: Stamage Int
-evenOdd = Stamage {gen = (*2) <$> (arbitrary:: Gen Int), next = const oddEven}
+padStrP :: ([a], Int) -> Stamage a
+padStrP = error "Not Implemented"
 
-uniqueSM ::  (Arbitrary a, Ord a) => Set.Set a -> Stamage a
-uniqueSM acc = Stamage {
-    gen = arbitrary `suchThat`  (\n -> not (Set.member n acc)),
-    next = \e -> uniqueSM $ Set.insert e acc
-}
-
-arbitraryStamage :: (Arbitrary a, Num a) => Stamage a
-arbitraryStamage  = Stamage {
-    gen = arbitrary,
-    next = const arbitraryStamage
-}
-
-constSM :: (Arbitrary a) => Maybe a -> Stamage a
-constSM input = Stamage {
-    gen = maybe arbitrary return input,
-    next = constSM . pure
-}
-
-constOf :: a -> Stamage a
-constOf value = Stamage {
-    gen = return value,
-    next = const $ constOf value
-}
-
-
-
-cycleOf :: ([a], Int) -> Stamage a
-cycleOf (aList, index) = Stamage {
-    gen = return $ aList !! (index `mod` length aList),
-    next = const $ cycleOf (aList, index + 1)
-}
-
-cycleOfStr :: ([a], Int) -> Stama a
-cycleOfStr (aList, index) = Stama {
-    genElem = aList !! (index `mod` length aList),
-    nextStr = const $ cycleOfStr (aList, index + 1)
-}
-padStr :: ([a], Int) -> Stama a
-padStr (aList, index) = Stama {
-    genElem = if index < length aList
-                then aList !! index
-                else last aList,
-    nextStr = const $ padStr (aList, index + 1)
-}
-
-makeRoundRobin :: [Gen a] -> Int -> Stamage a
-makeRoundRobin gens index = Stamage {
-    gen = gens !! index,
-    next = \_ -> makeRoundRobin gens $ (index + 1) `mod` length gens
-}
 
 -- Stream Generators ----------------------------------------------------------
-oddEvenGen :: Gen (Str Int)
-oddEvenGen = stamageGen oddEven
+oddEvenGenP :: Gen (Str Int)
+oddEvenGenP = stamagePGen oddEvenP
 
-evenOddGen :: Gen (Str Int)
-evenOddGen = stamageGen evenOdd
+evenOddGenP :: Gen (Str Int)
+evenOddGenP = stamagePGen evenOddP
 
 increasingNums :: (Arbitrary a, Num a) => Gen (Str a)
-increasingNums = stamageGen (increasingSM 0)
+increasingNums = error "Not Implemented" -- stamageGen (increasingSM 0)
 
 uniqueStr :: (Arbitrary a, Ord a) => Gen (Str a)
-uniqueStr = stamageGen (uniqueSM Set.empty)
+uniqueStr = error "Not Implemented" -- stamageGen (uniqueSM Set.empty)
 
-constStrSM ::(Arbitrary a) =>  Gen (Str a)
-constStrSM = stamageGen (constSM Nothing)
+constStrP ::(Arbitrary a) =>  Gen (Str a)
+constStrP = error "Not Implemented" -- stamageGen (constSM Nothing)
 
-constStrOf :: Arbitrary a => a -> Gen (Str a)
-constStrOf value = stamageGen (constSM (Just value))
+constStrOfP :: a -> Gen (Str a)
+constStrOfP value = stamagePGen $ constOfP value
 
-cyclicStrOf :: [a] -> Gen (Str a)
-cyclicStrOf aList = return $ fixedCyclicStr aList
+padFiniteP :: [a] -> Str a
+padFiniteP aList = error "Not Implemented" -- stamageStr $ padStr (aList, 0)
 
-fixedCyclicStr :: [a] -> Str a
-fixedCyclicStr aList = stamageStr $ cycleOfStr (aList, 0)
 
-padFinite :: [a] -> Str a
-padFinite aList = stamageStr $ padStr (aList, 0)
-
-roundRobin :: [Gen a] -> Gen (Str a)
-roundRobin gens = stamageGen $ makeRoundRobin gens 0
-
---- New Stamage ------------------------------------------------------
+--- New StamagePs ------------------------------------------------------
 
 evenOddP :: StamageP Int
 evenOddP = Next $ do
@@ -163,20 +72,13 @@ evenOddP = Next $ do
 
 oddEvenP :: StamageP Int
 oddEvenP = Next $ do
-        value <- (\i -> i * 2 + 1) <$> (arbitrary:: Gen Int)
+        value <- (.|. 1) <$> arbitrary
         return (value, evenOddP)
 
 constOfP :: a -> StamageP a
 constOfP value = Next $ return (value, constOfP value)
 
-stamagePGen :: StamageP a -> Gen (Str a)
-stamagePGen (Next aGen) = do
-    (value, aStamageP) <- aGen
-    rest <- stamagePGen aStamageP
-    return $ value ::: delay rest
-
-newtype StamageP a = Next (Gen (a, StamageP a))
-
+--- StamageP combinators ---------------------------------------------
 nextP :: Gen a -> StamageP a -> StamageP a
 nextP nextGen aStamageP =
     Next $ do
@@ -213,9 +115,8 @@ orP firstStamage secondStamage = Next $ do
 suchThatP :: StamageP a -> TPred a -> StamageP a
 suchThatP _ _ = error "Not implemented"
 
-
--- mkStamageP :: TPred a -> StamageP a
--- mkStamageP _ = error "Not implemented"--something very similar to evalLTL.
+mkStamageP :: TPred a -> StamageP a
+mkStamageP _ = error "Not implemented"--something very similar to evalLTL.
 
 
 

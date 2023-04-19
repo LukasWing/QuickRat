@@ -110,8 +110,6 @@ prop_schedule_infinitelyActive_noDeadLock =
         )
         $ evalLTL isInfinitelyActive . schedule
 
-
-
 negateFalse :: Str Bool -> Str Bool
 negateFalse = Rattus.Stream.map (box $ \b -> b || not b)
 
@@ -120,33 +118,3 @@ prop_negateFalse_eventuallyTrue_alwaysTrue =
     forAll
         (genBoolStr $ CEventually (CSP strHead))
         $ evalLTL (Always (SP strHead))
-
-next :: Gen a -> Stamage a -> Stamage a
-next element aStamage = Stamage {
-    gen = element,
-    Generators.next = const aStamage
-}
-
-or :: Bool -> Stamage a -> Stamage a -> Stamage a
-or pickFirst firstStamage secondStamage = if pickFirst 
-                                            then firstStamage 
-                                            else secondStamage
-until :: Gen a -> Int -> Stamage a -> Stamage a
-until tipGen count = applyN count (Examples.next tipGen) -- how to remove count.
-
-roundRobin :: [Gen a] -> Stamage a
-roundRobin generatorList =
-    let roundRobin' gens index = Stamage {
-        gen = gens !! index,
-        Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
-    }
-    in roundRobin' generatorList 0 
-
-eventually :: forall a. (Arbitrary a) => Int -> Stamage a -> Stamage a
-eventually count = applyN count (Examples.next (arbitrary :: Gen a)) -- until arbitrary phi
-
-suchThat :: Stamage a -> TPred a -> Stamage a
-suchThat _ _ = error "Not implemented"
-
-mkStamage :: TPred a -> Stamage a
-mkStamage _ = error "Not implemented"--something very similar to evalLTL.

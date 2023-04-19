@@ -10,20 +10,9 @@ import Generators
 
 runSG = do
     print "inc ints"
-    sample (increasingNums:: Gen (Str Int))
-    sample (increasingNums:: Gen (Str Float))
-    sample (uniqueStr::Gen (Str String))
-    sample (uniqueStr::Gen (Str Int))
-    sample (constStrSM:: Gen (Str Int))
-    sample (constStrSM:: Gen (Str (Bool, Float)))
     
 runLTL = do 
     print "LTL: ------"
-    let expr5 = tautology
-    let expr3 = And expr5 expr5
-    let expr4 = Not $ And expr5 expr5
-    sample (cyclicStrOf [1,2,3])
-    print $ fixedCyclicStr [1,2]
     print "LTL: Done"
 
 

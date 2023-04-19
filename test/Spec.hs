@@ -16,9 +16,9 @@ main :: IO ()
 main = do
     let testRunners =   [
                         GT.runTests
-                        -- , HT.runTests
-                        -- , ET.runTests
-                        --, LT.runTests
+                        , HT.runTests
+                        , ET.runTests
+                        , LT.runTests
                         , EXT.runTests
                         ]
     good <- and <$> sequence testRunners

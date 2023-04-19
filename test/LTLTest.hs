@@ -82,7 +82,7 @@ prop_UntilPhiTurnsOffThenPhi =
     i >= 0 ==>  
     let phiPart =  [j < i | j <- [0..i]]
         psiPart =  [j == i | j <- [0..i]]
-        inStream = padFinite $ zip phiPart psiPart
+        inStream = padFiniteP $ zip phiPart psiPart
     in evalLTL (SP (fst . strHead) `Until` SP (snd . strHead)) inStream
 
 
@@ -92,11 +92,11 @@ prop_EventuallyTrueGivesTrue =
 
 prop_EventuallyBoolStep :: Bool
 prop_EventuallyBoolStep =
-    evalLTL (Eventually idSP) $ padFinite boolStep
+    evalLTL (Eventually idSP) $ padFiniteP boolStep
 
 prop_EventuallyOneTrue :: Bool
 prop_EventuallyOneTrue =
-    evalLTL (Eventually idSP) $ padFinite [False, True, False]
+    evalLTL (Eventually idSP) $ padFiniteP [False, True, False]
 
 prop_EventuallyTrueMightBeContradiction :: Bool
 prop_EventuallyTrueMightBeContradiction =
@@ -106,8 +106,7 @@ prop_AfterAllTrue :: Int -> Bool
 prop_AfterAllTrue timeGap = evalLTL (After timeGap idSP) (constStr True)
 
 prop_AfterFirstFalse :: Bool
-prop_AfterFirstFalse  = not $ evalLTL (After 0 idSP) $ padFinite [False, True]
-
+prop_AfterFirstFalse  = not $ evalLTL (After 0 idSP) $ padFiniteP [False, True]
 
 prop_Eventually :: Property
 prop_Eventually =

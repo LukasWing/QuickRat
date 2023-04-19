@@ -96,8 +96,6 @@ run1 = do
     -- print MyNested {description="1", content=MyList[1,2]}
     -- sample (scale (*33) (arbitrary:: Gen (QStr Int)))
     -- sample (arbitrary:: Gen (Str (Int,String)))
-    sample evenOddGen
-    sample oddEvenGen
     -- print $ evenOddGen evenOdd
 
 addStuff :: [Char] -> [Char]
@@ -178,6 +176,5 @@ run = do
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     runAsync
-    sample (stamageGen (Examples.until (return (2::Int)) 6 evenOdd))
     sample (stamagePGen oddEvenP)
     print "Done"

@@ -20,7 +20,7 @@ stamateRun aStr aStamate =
             checksLeft == 0
             || check aStamate' h
             && stamateRun' (adv t) (next aStamate' h) (pred checksLeft)
-        nChecks = 20
+        nChecks = (20:: Int)
     in stamateRun' aStr aStamate nChecks
 
 -- State Machines -------------------------------------------------------------
