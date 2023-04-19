@@ -77,6 +77,7 @@ alternatesEvenOdd aStr = stamateRun aStr (isAlternatingSM True)
 alternatesOddEven :: Integral a => Str a -> Bool
 alternatesOddEven aStr = stamateRun aStr (isAlternatingSM False)
 
+
 allTrue :: Str Bool -> Bool
 allTrue aStr = stamateRun aStr $ isConstSM (Just True)
 
@@ -93,19 +94,4 @@ strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
             check = (== h),
             next = const $ strProbEq' (adv t) 
         } 
-        
---- New Stamage ---
 
-newtype StamageP a = Next (Gen (a, StamageP a))
-
-nextP :: Gen a -> StamageP a -> StamageP a 
-nextP nextGen aStamageP = 
-    Next $ do
-        tip <- nextGen
-        return (tip, aStamageP)
-                             
-untilP :: Gen a -> StamageP a -> StamageP a
-untilP tipGen aStamageP = Next $ do
-                nPrepends <- (arbitrary :: Gen Int)
-                let Next aGenStamage = applyN nPrepends (nextP tipGen) aStamageP
-                aGenStamage

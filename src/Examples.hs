@@ -121,16 +121,18 @@ prop_negateFalse_eventuallyTrue_alwaysTrue =
         (genBoolStr $ CEventually (CSP strHead))
         $ evalLTL (Always (SP strHead))
 
-or :: Bool -> Stamage a -> Stamage a -> Stamage a
-or pickFirst firstStamage secondStamage = if pickFirst 
-                                            then firstStamage 
-                                            else secondStamage
-
 next :: Gen a -> Stamage a -> Stamage a
 next element aStamage = Stamage {
     gen = element,
     Generators.next = const aStamage
 }
+
+or :: Bool -> Stamage a -> Stamage a -> Stamage a
+or pickFirst firstStamage secondStamage = if pickFirst 
+                                            then firstStamage 
+                                            else secondStamage
+until :: Gen a -> Int -> Stamage a -> Stamage a
+until tipGen count = applyN count (Examples.next tipGen) -- how to remove count.
 
 roundRobin :: [Gen a] -> Stamage a
 roundRobin generatorList =
@@ -139,9 +141,6 @@ roundRobin generatorList =
         Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
     }
     in roundRobin' generatorList 0 
-
-until :: Gen a -> Int -> Stamage a -> Stamage a
-until tipGen count = applyN count (Examples.next tipGen) -- how to remove count.
 
 eventually :: forall a. (Arbitrary a) => Int -> Stamage a -> Stamage a
 eventually count = applyN count (Examples.next (arbitrary :: Gen a)) -- until arbitrary phi

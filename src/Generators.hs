@@ -33,8 +33,8 @@ prependStamage aStamage element = Stamage {
 
 prependNStamage :: Stamage a -> [a] -> Stamage a
 prependNStamage aStamage aList =
-    let stamages = iterate 
-            (\(prev, n) -> (prependStamage prev (aList !! (n-1)), n-1)) 
+    let stamages = iterate
+            (\(prev, n) -> (prependStamage prev (aList !! (n-1)), n-1))
             (aStamage, length aList)
     in fst (stamages !! (length aList))
 
@@ -96,6 +96,8 @@ constOf value = Stamage {
     next = const $ constOf value
 }
 
+
+
 cycleOf :: ([a], Int) -> Stamage a
 cycleOf (aList, index) = Stamage {
     gen = return $ aList !! (index `mod` length aList),
@@ -151,3 +153,67 @@ padFinite aList = stamageStr $ padStr (aList, 0)
 
 roundRobin :: [Gen a] -> Gen (Str a)
 roundRobin gens = stamageGen $ makeRoundRobin gens 0
+
+--- New Stamage ------------------------------------------------------
+
+evenOddP :: StamageP Int
+evenOddP = Next $ do
+        value <- (*2) <$> (arbitrary:: Gen Int)
+        return (value, oddEvenP)
+
+oddEvenP :: StamageP Int
+oddEvenP = Next $ do
+        value <- (\i -> i * 2 + 1) <$> (arbitrary:: Gen Int)
+        return (value, evenOddP)
+
+constOfP :: a -> StamageP a
+constOfP value = Next $ return (value, constOfP value)
+
+stamagePGen :: StamageP a -> Gen (Str a)
+stamagePGen (Next aGen) = do
+    (value, aStamageP) <- aGen
+    rest <- stamagePGen aStamageP
+    return $ value ::: delay rest
+
+newtype StamageP a = Next (Gen (a, StamageP a))
+
+nextP :: Gen a -> StamageP a -> StamageP a
+nextP nextGen aStamageP =
+    Next $ do
+        tip <- nextGen
+        return (tip, aStamageP)
+
+untilP :: Gen a -> StamageP a -> StamageP a
+untilP tipGen aStamageP = Next $ do
+        nPrepends <- abs <$> (arbitrary :: Gen Int)
+        let Next aGenStamage = applyN nPrepends (nextP tipGen) aStamageP
+        aGenStamage
+
+
+roundRobinP :: [Gen a] -> StamageP a
+roundRobinP _ = error "Not implemented"
+-- roundRobinP generatorList =
+--     let roundRobin' gens index = Stamage {
+--         gen = gens !! index,
+--         Generators.next = \_ -> roundRobin' gens $ (index + 1) `mod` length gens
+--     }
+--     in roundRobin' generatorList 0 
+
+eventuallyP :: forall a. (Arbitrary a) => StamageP a -> StamageP a
+eventuallyP _ = error "Not implemented"
+-- eventuallyP count = applyN count (Examples.next (arbitrary :: Gen a)) -- until arbitrary phi
+
+
+orP :: StamageP a -> StamageP a -> StamageP a
+orP firstStamage secondStamage = Next $ do
+            Next aStamagePGen <- elements [firstStamage, secondStamage]
+            aStamagePGen
+
+-- suchThatP :: StamageP a -> TPred a -> StamageP a
+-- suchThatP _ _ = error "Not implemented"
+
+-- mkStamageP :: TPred a -> StamageP a
+-- mkStamageP _ = error "Not implemented"--something very similar to evalLTL.
+
+
+
