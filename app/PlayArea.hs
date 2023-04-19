@@ -153,8 +153,7 @@ data Z = Z {a::Float, b::Float}
 genComplex = arbitrary >>= (\a ->
              arbitrary >>= (\b ->
              return Z {a=a, b=b}))
-
-
+                 
 
 mapL :: Box (a -> b) -> O a -> O b
 mapL f inpF = delay (unbox f (adv inpF))
@@ -168,6 +167,9 @@ runAsync = do
     print (traceTest 2)
     putStrLn "Run Async Done"
 
+    
+rollDice :: Int -> Gen [Int]
+rollDice n = replicateM n (arbitrary >>= (\i -> return (i `mod` 6 + 1))) 
 
 run = do
     print $ addStuff "Hey"

@@ -121,7 +121,6 @@ prop_negateFalse_eventuallyTrue_alwaysTrue =
         (genBoolStr $ CEventually (CSP strHead))
         $ evalLTL (Always (SP strHead))
 
-
 or :: Bool -> Stamage a -> Stamage a -> Stamage a
 or pickFirst firstStamage secondStamage = if pickFirst 
                                             then firstStamage 
@@ -152,5 +151,3 @@ suchThat _ _ = error "Not implemented"
 
 mkStamage :: TPred a -> Stamage a
 mkStamage _ = error "Not implemented"--something very similar to evalLTL.
-
-
