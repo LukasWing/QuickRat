@@ -11,9 +11,7 @@ import Test.QuickCheck hiding ((.&.))
 import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
-import System.Posix.Internals (statGetType)
-import Data.Foldable (Foldable(length))
-import GHC.Show (asciiTab)
+import LTL
 
 -- Foundations -------------------------------------------------------------
 instance (Arbitrary a) => Arbitrary (Str a) where
@@ -192,7 +190,6 @@ untilP tipGen aStamageP =
         let Next aGenStamage = applyN nPrepends (nextP tipGen) aStamageP
         aGenStamage
 
-
 roundRobinP :: [Gen a] -> StamageP a
 roundRobinP gens =
     let roundRobinP' gens' index = Next $ do
@@ -213,8 +210,9 @@ orP firstStamage secondStamage = Next $ do
             Next aStamagePGen <- elements [firstStamage, secondStamage]
             aStamagePGen
 
--- suchThatP :: StamageP a -> TPred a -> StamageP a
--- suchThatP _ _ = error "Not implemented"
+suchThatP :: StamageP a -> TPred a -> StamageP a
+suchThatP _ _ = error "Not implemented"
+
 
 -- mkStamageP :: TPred a -> StamageP a
 -- mkStamageP _ = error "Not implemented"--something very similar to evalLTL.

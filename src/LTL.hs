@@ -3,7 +3,7 @@
 module LTL where
 import Rattus.Stream hiding (const)
 import qualified Rattus.Stream as RS
-import Evaluators
+import {-# SOURCE #-} Evaluators
 import Helpers
 import Rattus
 

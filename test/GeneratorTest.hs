@@ -107,6 +107,12 @@ prop_orP_OorK_OorKisOkay =
         (stamagePGen (orP (constOfP 'O') (constOfP 'K')))
         $ evalLTL $ SP ((=='O') . strHead) `Or` SP ((=='K') . strHead)
 
+prop_suchThatP_1111or2222suchThatEven_2222 :: Property
+prop_suchThatP_1111or2222suchThatEven_2222 = 
+    forall
+        (stamagePGen $ (constOfP 1) `orP` (constOfP 2) `suchThatP` SP (even . headStr))
+        $ evalLTL $ Always $ SP ((==1) . strHead) 
+
 displayOnlyFailing :: Property -> IO Result
 displayOnlyFailing aProperty = do
     result <- quickCheckWithResult nonChatty aProperty

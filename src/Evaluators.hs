@@ -62,6 +62,9 @@ areUnique aStr = stamateRun aStr $ isUniqueSM (Set.empty::Set.Set a)
 isConstCheck :: (Eq a) => Str a -> Bool
 isConstCheck aStr = stamateRun aStr (isConstSM Nothing)
 
+isConstVal :: (Eq a) => a -> Str a -> Bool
+isConstVal val aStr = stamateRun aStr (isConstSM (Just val))
+
 areIncreasing :: (Ord a) => Str a -> Bool
 areIncreasing (h1 ::: t1) =
     let isIncreasing e1 (e2 ::: t2) checksLeft =
