@@ -1,18 +1,22 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 {-# LANGUAGE GADTs #-}
 module LTL where
-import Rattus.Stream hiding (const)
-import qualified Rattus.Stream as RS
+import Rattus.Stream hiding (filter, const)
+import qualified Rattus.Stream as RS hiding (filter)
 import Helpers
 import Rattus
 
-type StrPred a = Str a -> Bool 
+type StrPred a = Str a -> Bool
 
 tautology :: TPred a
 tautology = SP (const True)
 
 contradiction :: TPred a
 contradiction = SP (const False)
+
+filterStrs ::  TPred a ->  [Str a] -> [Str a]
+filterStrs ltl = filter (evalLTL ltl)
+
 
 data TPred a where
     SP          :: StrPred a -> TPred a
@@ -31,8 +35,8 @@ evalLTL = evalLTL' 20 where
     evalLTL' :: Int -> TPred a -> Str a -> Bool
     evalLTL' checksLeft formulae aStr@(_ ::: t) =
         checksLeft <= 0 ||
-        let evalNext = evalLTL' (checksLeft - 1) 
-            eval = evalLTL' checksLeft  
+        let evalNext = evalLTL' (checksLeft - 1)
+            eval = evalLTL' checksLeft
             strTail = adv t
         in
         case formulae of
@@ -42,11 +46,11 @@ evalLTL = evalLTL' 20 where
             And phi psi     -> eval phi aStr && eval psi aStr
             Implies phi psi -> eval (Not phi `Or` psi) aStr
             Imminently phi  -> evalNext phi strTail
-            Eventually phi  -> eval phi aStr || evalNext (Eventually phi) strTail 
+            Eventually phi  -> eval phi aStr || evalNext (Eventually phi) strTail
             Until phi psi   -> eval psi aStr || (eval phi aStr && evalNext (phi `Until` psi) strTail)
             Always phi      -> eval phi aStr && evalNext (Always phi) strTail
-            After anInt phi -> if anInt == 0 
-                                then eval phi aStr 
-                                else evalNext (After (anInt - 1) phi) strTail 
-            
+            After anInt phi -> if anInt == 0
+                                then eval phi aStr
+                                else evalNext (After (anInt - 1) phi) strTail
+
 

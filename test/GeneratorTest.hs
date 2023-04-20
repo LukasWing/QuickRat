@@ -5,13 +5,12 @@ module GeneratorTest (
 ) where
 import Generators hiding (next)
 import Evaluators
-import Helpers (strGet, strHead, strTake)
+import Helpers (strGet, strHead, strTake, errorNotImplemented)
 import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
-import Control.Applicative (liftA)
-import Data.Bits
+import Data.Bits ((.|.), (.&.))
 
 prop_alternatesEvenOdd :: Property
 prop_alternatesEvenOdd =
@@ -21,11 +20,11 @@ prop_alternatesOddEven :: Property
 prop_alternatesOddEven =
     forAll oddEvenGenP alternatesOddEven
 
-prop_isIncreasing :: Property
-prop_isIncreasing = error "Not Implemented" -- forAll (increasingNums::Gen (Str Float)) areIncreasing
-
 prop_isUnique :: Property
-prop_isUnique = error "Not Implemented" -- forAll (uniqueStr::Gen (Str (Int, Float))) areUnique
+prop_isUnique = 
+    forAll 
+        (stamagePGen (stamagePUnique:: StamageP Int)) 
+        areUnique
 
 evenOddGenPair :: [Gen Int]
 evenOddGenPair = [
@@ -93,13 +92,16 @@ prop_suchThatP_1111or2222suchThatEven_2222 :: Property
 prop_suchThatP_1111or2222suchThatEven_2222 =
     satisfies
         (constOfP 1 `orP` constOfP 2 `suchThatP` SP (even . strHead))
-        $ Always $ hasHead (1::Int)
+        $ Always $ hasHead (2::Int)
 
 prop_suchThatP_evensOrOddssuchThatEven_Evens :: Property
-prop_suchThatP_evensOrOddssuchThatEven_Evens =
+prop_suchThatP_evensOrOddssuchThatEven_Evens = 
     satisfies
-        (constOfP 1 `orP` constOfP 2 `suchThatP` SP (even . strHead))
-        $ Always $ hasHead (1::Int)
+        (evenOddP `orP` oddEvenP `suchThatP` SP (even . strHead))
+        $ Always $ 
+            (SP (even . strHead) `And` (Imminently (SP (odd . strHead))))
+            `Or`
+            (SP (odd . strHead) `And` (Imminently (SP (even . strHead))))  
 
 nonChatty :: Args
 nonChatty = stdArgs {chatty = True}

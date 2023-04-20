@@ -13,6 +13,7 @@ import Control.Monad.State
 import qualified Data.Set as Set
 import LTL
 import Data.Map (valid)
+import Text.Printf (errorBadArgument)
 
 -- Foundations -------------------------------------------------------------
 instance (Arbitrary a) => Arbitrary (Str a) where
@@ -30,15 +31,26 @@ stamagePGen (Next aGen) = do
     return $ value ::: delay rest
 
 -- State Machines ------------------------------------------------------------
-arbitraryStamageP :: (Arbitrary a, Num a) => Stamage a
-arbitraryStamageP = error "Not Implemented"
+arbitraryStamageP :: (Arbitrary a) => StamageP a
+arbitraryStamageP = Next $ do
+    element <- arbitrary
+    return (element, arbitraryStamageP)
 
-cycleOfP :: ([a], Int) -> Stamage a
-cycleOfP = error "Not Implemented"
+stamagePUnique :: (Arbitrary a, Ord a) => StamageP a
+stamagePUnique = stamagePUnique' Set.empty
+    where   
+        stamagePUnique' :: (Arbitrary a, Ord a) => Set.Set a -> StamageP a
+        stamagePUnique' acc = Next $ do
+            element <- arbitrary `suchThat` (`Set.notMember` acc)
+            let newSet = Set.insert element acc
+            return (element, stamagePUnique' newSet)
 
-padStrP :: ([a], Int) -> Stamage a
-padStrP = error "Not Implemented"
+stamagePOfStr :: Str a -> StamageP a
+stamagePOfStr (h ::: t) = Next $ return (h, stamagePOfStr (adv t))
 
+padListP :: (Arbitrary a ) => [a] -> StamageP a
+padListP (h:t) = Next $ return (h, padListP t)
+padListP [] = arbitraryStamageP
 
 -- Stream Generators ----------------------------------------------------------
 oddEvenGenP :: Gen (Str Int)
@@ -47,20 +59,11 @@ oddEvenGenP = stamagePGen oddEvenP
 evenOddGenP :: Gen (Str Int)
 evenOddGenP = stamagePGen evenOddP
 
-increasingNums :: (Arbitrary a, Num a) => Gen (Str a)
-increasingNums = error "Not Implemented" -- stamageGen (increasingSM 0)
-
 uniqueStr :: (Arbitrary a, Ord a) => Gen (Str a)
-uniqueStr = error "Not Implemented" -- stamageGen (uniqueSM Set.empty)
+uniqueStr = stamagePGen stamagePUnique
 
-constStrP ::(Arbitrary a) =>  Gen (Str a)
-constStrP = error "Not Implemented" -- stamageGen (constSM Nothing)
-
-constStrOfP :: a -> Gen (Str a)
-constStrOfP value = stamagePGen $ constOfP value
-
-padFiniteP :: [a] -> Str a
-padFiniteP aList = error "Not Implemented" -- stamageStr $ padStr (aList, 0)
+constStrOfP ::  a -> Gen (Str a)
+constStrOfP value = stamagePGen $ stamagePOfStr $ constStr value
 
 
 --- New StamagePs ------------------------------------------------------
@@ -78,6 +81,13 @@ oddEvenP = Next $ do
 constOfP :: a -> StamageP a
 constOfP value = Next $ return (value, constOfP value)
 
+collapseP :: [Str a] -> StamageP a
+collapseP streams = Next $ do 
+    aStr <- elements streams
+    let Next asg = stamagePOfStr aStr
+    asg
+
+
 --- StamageP combinators ---------------------------------------------
 nextP :: Gen a -> StamageP a -> StamageP a
 nextP nextGen aStamageP =
@@ -86,7 +96,7 @@ nextP nextGen aStamageP =
         return (tip, aStamageP)
 
 untilP :: Gen a -> StamageP a -> StamageP a
-untilP tipGen aStamageP = 
+untilP tipGen aStamageP =
     Next $ do
         nPrepends <- abs <$> (arbitrary :: Gen Int)
         let Next aGenStamage = applyN nPrepends (nextP tipGen) aStamageP
@@ -101,9 +111,9 @@ roundRobinP gens =
     in roundRobinP' gens 0
 
 eventuallyP :: forall a. (Arbitrary a) => StamageP a -> StamageP a
-eventuallyP aStamageP = 
+eventuallyP aStamageP =
     Next $ do
-        nPrepends <- elements [0..10] 
+        nPrepends <- elements [0..10]
         let Next aGenStamage = applyN nPrepends (nextP arbitrary) aStamageP
         aGenStamage
 
@@ -112,11 +122,15 @@ orP firstStamage secondStamage = Next $ do
             Next aStamagePGen <- elements [firstStamage, secondStamage]
             aStamagePGen
 
+vectorize :: Gen a -> Gen [a]
+vectorize gen = sized $ \n -> vectorOf ((n+1)*10) gen
+
 suchThatP :: StamageP a -> TPred a -> StamageP a
-suchThatP _ _ = error "Not implemented"
+suchThatP aStamageP aFilter = Next $ do 
+    strs <- vectorize (stamagePGen aStamageP)
+    let conjunction = filterStrs aFilter strs
+    let Next out = collapseP conjunction
+    out
 
 mkStamageP :: TPred a -> StamageP a
-mkStamageP _ = error "Not implemented"--something very similar to evalLTL.
-
-
-
+mkStamageP _ = errorNotImplemented --something very similar to evalLTL.

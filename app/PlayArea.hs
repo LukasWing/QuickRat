@@ -151,7 +151,7 @@ data Z = Z {a::Float, b::Float}
 genComplex = arbitrary >>= (\a ->
              arbitrary >>= (\b ->
              return Z {a=a, b=b}))
-                 
+
 
 mapL :: Box (a -> b) -> O a -> O b
 mapL f inpF = delay (unbox f (adv inpF))
@@ -165,16 +165,33 @@ runAsync = do
     print (traceTest 2)
     putStrLn "Run Async Done"
 
-    
+
 rollDice :: Int -> Gen [Int]
-rollDice n = replicateM n (arbitrary >>= (\i -> return (i `mod` 6 + 1))) 
+rollDice n = replicateM n (arbitrary >>= (\i -> return (i `mod` 6 + 1)))
+
+-- prop_1 :: (Ord a1, Num a1) => NonNegative Int -> Int -> Bool
+prop_1 :: NonNegative Int -> Bool
+prop_1 (NonNegative n) = (n::Int) > (-1)
+
+prop_2 :: InfiniteList (NonNegative Int) -> Large Int -> Bool
+prop_2 (InfiniteList (xs :: [NonNegative Int]) _) (Large n) = getNonNegative (xs !! n) > ((-1)::Int)
+
 
 run = do
+    quickCheck prop_1
+    quickCheck prop_2
     print $ addStuff "Hey"
     print $ twoCoins (mkStdGen 100)
     let (exp,_) = runState (stackManip 4) [7]
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     runAsync
-    sample (stamagePGen oddEvenP)
+    sample (stamagePGen $ padListP ['a','b','c'])
     print "Done"
+
+diceRoller :: Int -> Gen Int
+diceRoller nSides = do
+        i <- (arbitrary:: Gen Int)
+        return (i `mod` nSides + 1)
+genMe :: IO Int
+genMe = generate (arbitrary :: Gen Int)

@@ -82,7 +82,7 @@ prop_UntilPhiTurnsOffThenPhi =
     i >= 0 ==>  
     let phiPart =  [j < i | j <- [0..i]]
         psiPart =  [j == i | j <- [0..i]]
-        inStream = padFiniteP $ zip phiPart psiPart
+        inStream = strExtend $ zip phiPart psiPart
     in evalLTL (SP (fst . strHead) `Until` SP (snd . strHead)) inStream
 
 
@@ -92,11 +92,11 @@ prop_EventuallyTrueGivesTrue =
 
 prop_EventuallyBoolStep :: Bool
 prop_EventuallyBoolStep =
-    evalLTL (Eventually idSP) $ padFiniteP boolStep
+    evalLTL (Eventually idSP) $ strExtend boolStep
 
 prop_EventuallyOneTrue :: Bool
 prop_EventuallyOneTrue =
-    evalLTL (Eventually idSP) $ padFiniteP [False, True, False]
+    evalLTL (Eventually idSP) $ strExtend [False, True, False]
 
 prop_EventuallyTrueMightBeContradiction :: Bool
 prop_EventuallyTrueMightBeContradiction =
@@ -106,13 +106,7 @@ prop_AfterAllTrue :: Int -> Bool
 prop_AfterAllTrue timeGap = evalLTL (After timeGap idSP) (constStr True)
 
 prop_AfterFirstFalse :: Bool
-prop_AfterFirstFalse  = not $ evalLTL (After 0 idSP) $ padFiniteP [False, True]
-
-prop_Eventually :: Property
-prop_Eventually =
-    forAll increasingNums $
-        let positive = (>=(0::Int)) in
-        evalLTL $ Eventually $ SP (positive . strHead)
+prop_AfterFirstFalse  = not $ evalLTL (After 0 idSP) $ strExtend [False, True]
 
 boolStep :: [Bool]
 boolStep = [False, False, False, False, False, True, True, True, True, True]

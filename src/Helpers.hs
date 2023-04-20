@@ -35,9 +35,13 @@ constStr v = v ::: delay (constStr v)
 negateStr :: Str Bool  -> Str Bool
 negateStr = RS.map (box not)
 
-allSuffix :: Str a ->  [Str a]
-allSuffix lst = error "Not implemented"
-
-
 applyN :: Int -> (a -> a) -> a -> a
 applyN n f = (!! n ) . iterate f
+
+strExtend :: [a] -> Str a
+strExtend [h] = constStr h
+strExtend (h:t) = h ::: delay (strExtend t) 
+strExtend [] = error "No value in list"
+
+errorNotImplemented = error "Not Implemented"
+
