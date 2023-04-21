@@ -16,14 +16,9 @@ import LTL
 import Data.Map (valid)
 import Text.Printf (errorBadArgument)
 import Control.Exception (bracket, bracket_)
+import GHC.IO.Exception (assertError)
 
 -- Foundations -------------------------------------------------------------
-instance (Arbitrary a) => Arbitrary (Str a) where
-    arbitrary = do
-        x <- arbitrary::Gen a
-        xs <- arbitrary::Gen (Str a)
-        return $ x:::delay xs
-
 type Stamage a = StamageP a
 newtype StamageP a = Next (Gen (a, StamageP a))
 stamagePGen :: StamageP a -> Gen (Str a)
@@ -32,27 +27,11 @@ stamagePGen (Next aGen) = do
     rest <- stamagePGen aStamageP
     return $ value ::: delay rest
 
--- State Machines ------------------------------------------------------------
-arbitraryStamageP :: (Arbitrary a) => StamageP a
-arbitraryStamageP = Next $ do
-    element <- arbitrary
-    return (element, arbitraryStamageP)
+getGen :: StamageP a -> Gen (a, StamageP a)
+getGen (Next gen) = gen 
 
-stamagePUnique :: (Arbitrary a, Ord a) => StamageP a
-stamagePUnique = stamagePUnique' Set.empty
-    where
-        stamagePUnique' :: (Arbitrary a, Ord a) => Set.Set a -> StamageP a
-        stamagePUnique' acc = Next $ do
-            element <- arbitrary `suchThat` (`Set.notMember` acc)
-            let newSet = Set.insert element acc
-            return (element, stamagePUnique' newSet)
-
-stamagePOfStr :: Str a -> StamageP a
-stamagePOfStr (h ::: t) = Next $ return (h, stamagePOfStr (adv t))
-
-padListP :: (Arbitrary a ) => [a] -> StamageP a
-padListP (h:t) = Next $ return (h, padListP t)
-padListP [] = arbitraryStamageP
+instance (Arbitrary a) => Arbitrary (Str a) where
+    arbitrary = stamagePGen arbitraryStamageP
 
 -- Stream Generators ----------------------------------------------------------
 oddEvenGenP :: Gen (Str Int)
@@ -67,22 +46,6 @@ uniqueStr = stamagePGen stamagePUnique
 constStrOfP ::  a -> Gen (Str a)
 constStrOfP value = stamagePGen $ stamagePOfStr $ constStr value
 
-
---- New StamagePs ------------------------------------------------------
-
-evenOddP :: StamageP Int
-evenOddP = Next $ do
-        value <- (*2) <$> (arbitrary:: Gen Int)
-        return (value, oddEvenP)
-
-oddEvenP :: StamageP Int
-oddEvenP = Next $ do
-        value <- (.|. 1) <$> arbitrary
-        return (value, evenOddP)
-
-constOfP :: a -> StamageP a
-constOfP value = Next $ return (value, constOfP value)
-
 --- StamageP combinators ---------------------------------------------
 nextP :: Gen a -> StamageP a -> StamageP a
 nextP nextGen aStamageP =
@@ -94,8 +57,15 @@ untilP :: Gen a -> StamageP a -> StamageP a
 untilP tipGen aStamageP =
     Next $ do
         nPrepends <- abs <$> (arbitrary :: Gen Int)
-        let Next aGenStamage = applyN nPrepends (nextP tipGen) aStamageP
-        aGenStamage
+        getGen (applyN nPrepends (nextP tipGen) aStamageP)
+        
+
+afterP ::  forall a. (Arbitrary a) => Int -> StamageP a -> StamageP a
+afterP anInt aStamageP =
+    if anInt > 0 then Next $ do
+        element <- arbitrary
+        return (element, afterP (anInt - 1) aStamageP)
+    else aStamageP
 
 roundRobinP :: [Gen a] -> StamageP a
 roundRobinP gens =
@@ -140,5 +110,54 @@ suchThatP aStamageP aFilter = Next $ do
                 asg
             else Nothing
 
+
+--- StamageP generators -----------------------------------------------------
+
+arbitraryStamageP :: (Arbitrary a) => StamageP a
+arbitraryStamageP = Next $ do
+    element <- arbitrary
+    return (element, arbitraryStamageP)
+
+stamagePUnique :: (Arbitrary a, Ord a) => StamageP a
+stamagePUnique = stamagePUnique' Set.empty where
+    stamagePUnique' :: (Arbitrary a, Ord a) => Set.Set a -> StamageP a
+    stamagePUnique' acc = Next $ do
+        element <- arbitrary `suchThat` (`Set.notMember` acc)
+        let newSet = Set.insert element acc
+        return (element, stamagePUnique' newSet)
+
+stamagePOfStr :: Str a -> StamageP a
+stamagePOfStr (h ::: t) = Next $ return (h, stamagePOfStr (adv t))
+
+padListP :: (Arbitrary a ) => [a] -> StamageP a
+padListP (h:t) = Next $ return (h, padListP t)
+padListP [] = arbitraryStamageP
+
+evenOddP :: StamageP Int
+evenOddP = Next $ do
+        value <- (*2) <$> (arbitrary:: Gen Int)
+        return (value, oddEvenP)
+
+oddEvenP :: StamageP Int
+oddEvenP = Next $ do
+        value <- (.|. 1) <$> arbitrary
+        return (value, evenOddP)
+
+constOfP :: a -> StamageP a
+constOfP value = Next $ return (value, constOfP value)
+
 mkStamageP :: (Arbitrary a) => TPred a -> StamageP a
-mkStamageP = suchThatP arbitraryStamageP --something very similar to evalLTL.
+mkStamageP formulae = case formulae of
+    SP aStrPred     -> arbitraryStamageP `suchThatP` SP aStrPred
+    Not aTPred      -> errorNotImplemented
+    Or phi psi      -> mkStamageP phi `orP` mkStamageP psi
+    And phi psi     -> errorNotImplemented
+    Implies phi psi -> errorNotImplemented
+    Imminently phi  -> nextP arbitrary $ mkStamageP phi 
+    Eventually phi  -> eventuallyP $ mkStamageP phi
+    Until phi psi   -> errorNotImplemented
+    Always phi      -> errorNotImplemented
+    After anInt phi -> afterP anInt $ mkStamageP phi
+                       
+                       
+ 

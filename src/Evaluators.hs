@@ -6,7 +6,6 @@ import Test.QuickCheck
 import Rattus.Stream hiding (const)
 import Rattus
 import qualified Data.Set as Set
-import Control.Monad (join)
 
 -- Foundations ----------------------------------------------------------------
 data Stamate a = Stamate {
@@ -37,7 +36,6 @@ isConstSM input = Stamate {
                         Nothing -> True,
     next = isConstSM . Just
 }
-
 
 isAlternatingSM :: (Integral a) => Bool -> Stamate a
 isAlternatingSM expectEven = Stamate{
@@ -96,5 +94,4 @@ strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
         strProbEq' (h ::: t) = Stamate {
             check = (== h),
             next = const $ strProbEq' (adv t) 
-        } 
-
+        }

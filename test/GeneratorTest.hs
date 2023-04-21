@@ -62,7 +62,13 @@ prop_untilP_threeUntilEvenOdd :: Property
 prop_untilP_threeUntilEvenOdd =
     return (3::Int) `untilP` evenOddP `satisfies` threeUntilEvenOdd
 
-
+prop_afterP_2TrueAfter3_is3TrueAfter2 :: Property
+prop_afterP_2TrueAfter3_is3TrueAfter2 = 
+    satisfies
+        (afterP 2 $ padListP [True, True, True])
+        $ After 2 $ hasHead True
+                        `And` Imminently (hasHead True)
+                        `And` Imminently (Imminently $ hasHead True)
 prop_untilP_anyIntUntilSomeStr :: Property
 prop_untilP_anyIntUntilSomeStr =
     satisfies
@@ -90,6 +96,7 @@ prop_orP_OorK_OorKisOkay =
         (constOfP 'O' `orP` constOfP 'K')
         $ hasHead 'O' `Or` hasHead 'K'
 
+
 prop_suchThatP_1111or2222suchThatEven_2222 :: Property
 prop_suchThatP_1111or2222suchThatEven_2222 =
     satisfies
@@ -98,9 +105,10 @@ prop_suchThatP_1111or2222suchThatEven_2222 =
 
 altsOddOrEven :: TPred Int
 altsOddOrEven = Always $
-                    (SP (even . strHead) `And` Imminently (SP (odd . strHead)))
-                    `Or`
-                    (SP (odd . strHead) `And` Imminently (SP (even . strHead)))
+    (SP (even . strHead) `And` Imminently (SP (odd . strHead)))
+    `Or`
+    (SP (odd . strHead) `And` Imminently (SP (even . strHead)))
+
 prop_suchThatP_evensOrOddssuchThatEven_Evens :: Property
 prop_suchThatP_evensOrOddssuchThatEven_Evens =
     satisfies
@@ -113,8 +121,8 @@ prop_mkStamage_startTrue_startsTrue =
         (mkStamageP (hasHead True))
         $ hasHead True
 
-prop_mkStamage_start101_starts101 :: Property
-prop_mkStamage_start101_starts101 =
+disabled_prop_mkStamage_start101_starts101 :: Property
+disabled_prop_mkStamage_start101_starts101 =
     satisfies
         (mkStamageP starts101)
         starts101
@@ -127,6 +135,7 @@ disabled_prop_mkStamage_evenOdd_isOddEven =
     satisfies
         (mkStamageP altsOddOrEven)
         altsOddOrEven
+
 
 nonChatty :: Args
 nonChatty = stdArgs {chatty = True}

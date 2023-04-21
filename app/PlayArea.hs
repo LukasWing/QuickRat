@@ -193,5 +193,6 @@ diceRoller :: Int -> Gen Int
 diceRoller nSides = do
         i <- (arbitrary:: Gen Int)
         return (i `mod` nSides + 1)
+
 genMe :: IO Int
 genMe = generate (arbitrary :: Gen Int)
