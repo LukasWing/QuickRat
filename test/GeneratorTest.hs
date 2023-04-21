@@ -1,16 +1,18 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Use camelCase" #-}
 module GeneratorTest (
     runTests
 ) where
-import Generators hiding (next)
+import Generators
 import Evaluators
-import Helpers (strGet, strHead, strTake, errorNotImplemented)
+import Helpers 
 import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
-import Data.Bits ((.|.), (.&.))
+import Data.Bits ((.|.))
 
 prop_alternatesEvenOdd :: Property
 prop_alternatesEvenOdd =
@@ -21,9 +23,9 @@ prop_alternatesOddEven =
     forAll oddEvenGenP alternatesOddEven
 
 prop_isUnique :: Property
-prop_isUnique = 
-    forAll 
-        (stamagePGen (stamagePUnique:: StamageP Int)) 
+prop_isUnique =
+    forAll
+        (stamagePGen (stamagePUnique:: StamageP Int))
         areUnique
 
 evenOddGenPair :: [Gen Int]
@@ -94,14 +96,37 @@ prop_suchThatP_1111or2222suchThatEven_2222 =
         (constOfP 1 `orP` constOfP 2 `suchThatP` SP (even . strHead))
         $ Always $ hasHead (2::Int)
 
+altsOddOrEven :: TPred Int
+altsOddOrEven = Always $
+                    (SP (even . strHead) `And` Imminently (SP (odd . strHead)))
+                    `Or`
+                    (SP (odd . strHead) `And` Imminently (SP (even . strHead)))
 prop_suchThatP_evensOrOddssuchThatEven_Evens :: Property
-prop_suchThatP_evensOrOddssuchThatEven_Evens = 
+prop_suchThatP_evensOrOddssuchThatEven_Evens =
     satisfies
         (evenOddP `orP` oddEvenP `suchThatP` SP (even . strHead))
-        $ Always $ 
-            (SP (even . strHead) `And` (Imminently (SP (odd . strHead))))
-            `Or`
-            (SP (odd . strHead) `And` (Imminently (SP (even . strHead))))  
+        altsOddOrEven
+
+prop_mkStamage_startTrue_startsTrue :: Property
+prop_mkStamage_startTrue_startsTrue =
+    satisfies
+        (mkStamageP (hasHead True))
+        $ hasHead True
+
+prop_mkStamage_start101_starts101 :: Property
+prop_mkStamage_start101_starts101 =
+    satisfies
+        (mkStamageP starts101)
+        starts101
+    where starts101 = hasHead (1::Int)
+                        `And` Imminently (hasHead 0)
+                        `And` Imminently (Imminently $ hasHead 1)
+
+disabled_prop_mkStamage_evenOdd_isOddEven :: Property
+disabled_prop_mkStamage_evenOdd_isOddEven =
+    satisfies
+        (mkStamageP altsOddOrEven)
+        altsOddOrEven
 
 nonChatty :: Args
 nonChatty = stdArgs {chatty = True}

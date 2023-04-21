@@ -2,9 +2,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
+{-# OPTIONS_GHC -Wmissing-export-lists #-}
 module Generators where
 import Helpers
-import Rattus.Stream hiding (const)
+import Rattus.Stream hiding (filter, const)
 import Rattus
 import Rattus.Primitives
 import Test.QuickCheck hiding ((.&.))
@@ -14,6 +15,7 @@ import qualified Data.Set as Set
 import LTL
 import Data.Map (valid)
 import Text.Printf (errorBadArgument)
+import Control.Exception (bracket, bracket_)
 
 -- Foundations -------------------------------------------------------------
 instance (Arbitrary a) => Arbitrary (Str a) where
@@ -38,7 +40,7 @@ arbitraryStamageP = Next $ do
 
 stamagePUnique :: (Arbitrary a, Ord a) => StamageP a
 stamagePUnique = stamagePUnique' Set.empty
-    where   
+    where
         stamagePUnique' :: (Arbitrary a, Ord a) => Set.Set a -> StamageP a
         stamagePUnique' acc = Next $ do
             element <- arbitrary `suchThat` (`Set.notMember` acc)
@@ -81,13 +83,6 @@ oddEvenP = Next $ do
 constOfP :: a -> StamageP a
 constOfP value = Next $ return (value, constOfP value)
 
-collapseP :: [Str a] -> StamageP a
-collapseP streams = Next $ do 
-    aStr <- elements streams
-    let Next asg = stamagePOfStr aStr
-    asg
-
-
 --- StamageP combinators ---------------------------------------------
 nextP :: Gen a -> StamageP a -> StamageP a
 nextP nextGen aStamageP =
@@ -122,15 +117,28 @@ orP firstStamage secondStamage = Next $ do
             Next aStamagePGen <- elements [firstStamage, secondStamage]
             aStamagePGen
 
-vectorize :: Gen a -> Gen [a]
-vectorize gen = sized $ \n -> vectorOf ((n+1)*10) gen
+
 
 suchThatP :: StamageP a -> TPred a -> StamageP a
-suchThatP aStamageP aFilter = Next $ do 
+suchThatP aStamageP aFilter = Next $ do
     strs <- vectorize (stamagePGen aStamageP)
-    let conjunction = filterStrs aFilter strs
-    let Next out = collapseP conjunction
-    out
+    let Next result =  
+            case collapseP $ filter (evalLTL aFilter) strs of
+                Just acc -> acc
+                Nothing -> error "No matching streams generated"
+    result
 
-mkStamageP :: TPred a -> StamageP a
-mkStamageP _ = errorNotImplemented --something very similar to evalLTL.
+    where
+        vectorize :: Gen a -> Gen [a]
+        vectorize gen = sized $ \n -> vectorOf ((n+1)*100) gen
+
+        collapseP :: [Str a] -> Maybe (StamageP a)
+        collapseP streams = if not $ null streams
+            then Just $ Next $ do
+                aStr <- elements streams
+                let Next asg = stamagePOfStr aStr
+                asg
+            else Nothing
+
+mkStamageP :: (Arbitrary a) => TPred a -> StamageP a
+mkStamageP = suchThatP arbitraryStamageP --something very similar to evalLTL.

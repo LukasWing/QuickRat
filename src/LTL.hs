@@ -2,8 +2,6 @@
 {-# LANGUAGE GADTs #-}
 module LTL where
 import Rattus.Stream hiding (filter, const)
-import qualified Rattus.Stream as RS hiding (filter)
-import Helpers
 import Rattus
 
 type StrPred a = Str a -> Bool
@@ -13,9 +11,6 @@ tautology = SP (const True)
 
 contradiction :: TPred a
 contradiction = SP (const False)
-
-filterStrs ::  TPred a ->  [Str a] -> [Str a]
-filterStrs ltl = filter (evalLTL ltl)
 
 
 data TPred a where

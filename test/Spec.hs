@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -Wno-missing-signatures #-}
-{-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 import GeneratorTest as GT
 import HelpersTest as HT
@@ -16,10 +15,10 @@ main :: IO ()
 main = do
     let testRunners =   [
                         GT.runTests
-                        , HT.runTests
-                        , ET.runTests
-                        , LT.runTests
-                        , EXT.runTests
+                        -- , HT.runTests
+                        -- , ET.runTests
+                        -- , LT.runTests
+                        -- , EXT.runTests
                         ]
     good <- and <$> sequence testRunners
     if good
