@@ -18,8 +18,9 @@ import Text.Printf (errorBadArgument)
 import Control.Exception (bracket, bracket_)
 import GHC.IO.Exception (assertError)
 
+
 -- Foundations -------------------------------------------------------------
-type Stamage a = StamageP a
+-- type Stamage a = StamageP a
 newtype StamageP a = Next (Gen (a, StamageP a))
 stamagePGen :: StamageP a -> Gen (Str a)
 stamagePGen (Next aGen) = do
@@ -86,8 +87,6 @@ orP :: StamageP a -> StamageP a -> StamageP a
 orP firstStamage secondStamage = Next $ do
             Next aStamagePGen <- elements [firstStamage, secondStamage]
             aStamagePGen
-
-
 
 suchThatP :: StamageP a -> TPred a -> StamageP a
 suchThatP aStamageP aFilter = Next $ do
@@ -159,5 +158,6 @@ mkStamageP formulae = case formulae of
     Always phi      -> errorNotImplemented
     After anInt phi -> afterP anInt $ mkStamageP phi
                        
-                       
- 
+-- import Evaluators                   
+-- suchThatT :: StamageP a -> Stamate a ->  StamageP a 
+-- suchThatT _ _ = errorNotImplemented
