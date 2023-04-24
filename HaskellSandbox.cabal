@@ -30,6 +30,7 @@ library
       Generators
       Helpers
       LTL
+      TypeFromMeeting
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:
