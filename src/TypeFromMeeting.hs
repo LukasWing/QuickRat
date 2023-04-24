@@ -2,15 +2,10 @@ module TypeFromMeetings where
 import Helpers 
 import Test.QuickCheck
 import LTL
---  0
-newtype Stamate a = Next (a -> Either Bool (Stamate a)) 
--- Left: check is done when passing is true, false it it failed, Right: more checking is needed.
 
--- More expressive type:
-newtype Stamate' a = NextT (a -> Checker a)
-data Checker a = Pass 
-                | Fail 
-                | Stamate' a 
+data Stamate a = Pass 
+                | Fail
+                | NextT (a -> Stamate a)
 
 newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
 -- Nothing means it did not succeed in generating suitable.
