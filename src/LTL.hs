@@ -5,7 +5,6 @@ import Rattus.Stream hiding (filter, const)
 import Rattus
 import Helpers
 
-type StrPred a = Str a -> Bool
 
 tautology :: TPred a
 tautology = SP (const True)
@@ -15,7 +14,7 @@ contradiction = SP (const False)
 
 
 data TPred a where
-    SP          :: StrPred a -> TPred a
+    SP          ::  (a -> Bool) -> TPred a
     Not         :: TPred a -> TPred a
     Or          :: TPred a -> TPred a -> TPred a
     Until       :: TPred a -> TPred a -> TPred a
@@ -32,7 +31,7 @@ evalLTL = evalLTL' 20
 evalLTL' :: Int -> TPred a -> Str a -> Bool
 evalLTL' checksLeft formulae aStr@(_ ::: t) =
     checksLeft <= 0 || case formulae of
-        SP aStrPred     -> aStrPred aStr
+        SP elementPred  -> elementPred $ strHead aStr
         Not aTPred      -> not $ eval aTPred aStr
         Or phi psi      -> eval phi aStr || eval psi aStr
         And phi psi     -> eval phi aStr && eval psi aStr
@@ -52,12 +51,14 @@ evalLTL' checksLeft formulae aStr@(_ ::: t) =
 
 altsOddOrEven :: TPred Int
 altsOddOrEven = Always $
-    (SP (even . strHead) `And` Imminently (SP (odd . strHead)))
+    (SP even `And` Imminently (SP odd))
     `Or`
-    (SP (odd . strHead) `And` Imminently (SP (even . strHead)))
+    (SP odd `And` Imminently (SP even))
     
-oddEvenLTL = SP (odd . strHead) `And` Imminently evenOddLTL
-evenOddLTL = SP (even . strHead) `And` Imminently oddEvenLTL
+oddEvenLTL :: TPred Int
+oddEvenLTL = SP odd `And` Imminently evenOddLTL
+evenOddLTL :: TPred Int
+evenOddLTL = SP even `And` Imminently oddEvenLTL
 
 alternatesEvenOdd :: Str Int -> Bool
 alternatesEvenOdd = evalLTL evenOddLTL

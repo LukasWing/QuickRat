@@ -13,6 +13,7 @@ import Rattus.Stream hiding (const)
 import Helpers
 import LTL
 import Evaluators
+import Helpers (strHead)
 
 type CStrPred a = Str a -> Bool
 data CPred a where
@@ -78,7 +79,7 @@ prop_turnOn_ImminentlyPressed_ImminentlyLight :: Property
 prop_turnOn_ImminentlyPressed_ImminentlyLight =
     forAll
         (genBoolStr $ CImminently (CSP strHead))
-        (evalLTL (Imminently (SP strHead)) . turnOn)
+        (evalLTL (Imminently (SP id)) . turnOn)
 
 -- CTRL ALT DELETE
 -- Always - eventually
@@ -97,7 +98,7 @@ infinitelyActive = CAlways
 isInfinitelyActive :: TPred (a, String)
 isInfinitelyActive = Always
                         (Eventually
-                            (SP ((=="t1") . snd . strHead))
+                            (SP ((=="t1") . snd))
                         )
 
 prop_schedule_infinitelyActive_noDeadLock :: Property
@@ -117,4 +118,4 @@ prop_negateFalse_eventuallyTrue_alwaysTrue :: Property
 prop_negateFalse_eventuallyTrue_alwaysTrue =
     forAll
         (genBoolStr $ CEventually (CSP strHead))
-        $ evalLTL (Always (SP strHead))
+        $ evalLTL (Always (SP id))

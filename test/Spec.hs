@@ -15,10 +15,10 @@ main :: IO ()
 main = do
     let testRunners =   [return True
                         , GT.runTests
-                        -- , HT.runTests
+                        , HT.runTests
                         , ET.runTests
-                        -- , LT.runTests
-                        -- , EXT.runTests
+                        , LT.runTests
+                        , EXT.runTests
                         ]
     good <- and <$> sequence testRunners
     if good

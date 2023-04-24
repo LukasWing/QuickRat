@@ -15,7 +15,7 @@ import LTL
 import Data.Bits ((.|.))
 
 hasHead :: (Eq p) => p -> TPred p
-hasHead expectedHead = SP ((==expectedHead) . strHead)
+hasHead expectedHead = SP (==expectedHead)
 
 satisfies :: Show a => Stamage a -> TPred a -> Property
 aStamage `satisfies` anLTL =

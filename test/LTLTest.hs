@@ -29,7 +29,8 @@ prop_NotContractionTrue aStr =
     let nExpr = Not contradiction in
     evalLTL nExpr aStr
 
-idSP = SP (strHead)
+idSP = SP $ \i -> (i::Bool)
+
 
 prop_NotIsInverse :: Str Bool -> Bool
 prop_NotIsInverse = evalLTL $ Not $ Not tautology
@@ -76,13 +77,13 @@ prop_UntilBothFalseGivesFalse =
     not $ evalLTL (Until idSP idSP) (constStr False)
 
 prop_UntilPhiTurnsOffThenPhi :: Property
-prop_UntilPhiTurnsOffThenPhi = 
+prop_UntilPhiTurnsOffThenPhi =
     forAll (arbitrary::Gen Int) $ \i ->
-    i >= 0 ==>  
+    i >= 0 ==>
     let phiPart =  [j < i | j <- [0..i]]
         psiPart =  [j == i | j <- [0..i]]
         inStream = strExtend $ zip phiPart psiPart
-    in evalLTL (SP (fst . strHead) `Until` SP (snd . strHead)) inStream
+    in evalLTL (SP fst `Until` SP snd) inStream
 
 
 prop_EventuallyTrueGivesTrue :: Bool

@@ -12,7 +12,7 @@ newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
 
 type StrPred a = a -> Bool 
 
--- 1 
+-- 1 -- next up
 mkStamage :: Stamate a -> Stamage a
 mkStamage _ = errorNotImplemented
 
