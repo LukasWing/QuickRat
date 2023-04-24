@@ -3,6 +3,7 @@
 module LTL where
 import Rattus.Stream hiding (filter, const)
 import Rattus
+import Helpers
 
 type StrPred a = Str a -> Bool
 
@@ -47,3 +48,19 @@ evalLTL' checksLeft formulae aStr@(_ ::: t) =
     where   evalNext = evalLTL' (checksLeft - 1)
             eval = evalLTL' checksLeft
             strTail = adv t
+
+
+altsOddOrEven :: TPred Int
+altsOddOrEven = Always $
+    (SP (even . strHead) `And` Imminently (SP (odd . strHead)))
+    `Or`
+    (SP (odd . strHead) `And` Imminently (SP (even . strHead)))
+    
+oddEvenLTL = SP (odd . strHead) `And` Imminently evenOddLTL
+evenOddLTL = SP (even . strHead) `And` Imminently oddEvenLTL
+
+alternatesEvenOdd :: Str Int -> Bool
+alternatesEvenOdd = evalLTL evenOddLTL
+
+alternatesOddEven :: Str Int -> Bool
+alternatesOddEven = evalLTL oddEvenLTL

@@ -9,7 +9,6 @@ import Rattus.Stream hiding (const, zip)
 import qualified Rattus.Stream as RS hiding (const)
 import Rattus
 import qualified Data.Set as Set
-import Helpers
 import Evaluators
 import LTL
 

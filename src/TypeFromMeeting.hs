@@ -1,4 +1,4 @@
-module TypeFromMeetings where
+module TypeFromMeeting where
 import Helpers 
 import Test.QuickCheck
 import LTL
@@ -26,4 +26,3 @@ suchThat _ _ = errorNotImplemented
 -- 3 Implement back tracking in v2
 and :: Stamate a -> Stamate a -> Stamate a
 and _ _ = errorNotImplemented
- 

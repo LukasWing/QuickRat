@@ -13,10 +13,10 @@ import qualified LTLTest as LT
 
 main :: IO ()
 main = do
-    let testRunners =   [
-                        GT.runTests
+    let testRunners =   [return True
+                        , GT.runTests
                         -- , HT.runTests
-                        -- , ET.runTests
+                        , ET.runTests
                         -- , LT.runTests
                         -- , EXT.runTests
                         ]

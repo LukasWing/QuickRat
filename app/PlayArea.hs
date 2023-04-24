@@ -186,7 +186,6 @@ run = do
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     runAsync
-    sample (stamagePGen $ padListP ['a','b','c'])
     print "Done"
 
 diceRoller :: Int -> Gen Int
