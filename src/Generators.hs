@@ -11,12 +11,9 @@ import Rattus.Primitives
 import Test.QuickCheck hiding ((.&.))
 import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
+
 import qualified Data.Set as Set
 import LTL
-import Data.Map (valid)
-import Text.Printf (errorBadArgument)
-import Control.Exception (bracket, bracket_)
-import GHC.IO.Exception (assertError)
 
 
 -- Foundations -------------------------------------------------------------
@@ -33,8 +30,16 @@ stamageRun (NextG aGen) = do
     rest <- stamageRun aStamage
     return $ value ::: delay rest
 
+
 instance (Arbitrary a) => Arbitrary (Str a) where
     arbitrary = stamageRun arbitraryStamage
+
+instance Show a => Show (Stamage a) where
+  show (NextG _) = " a NextG " 
+
+emptyStamage :: Stamage a
+emptyStamage = NextG (return Nothing)
+-- isStamageContradiction (NextG (Just _)) = False
 
 -- Stream Generators ----------------------------------------------------------
 
@@ -46,8 +51,8 @@ constStrOf value = stamageRun $ constOfG value
 
 --- Stamage producers ---------------------------------------------------------
 
-arbitraryStamage :: forall a. (Arbitrary a) => Stamage a 
-arbitraryStamage = NextG $ do 
+arbitraryStamage :: forall a. (Arbitrary a) => Stamage a
+arbitraryStamage = NextG $ do
     element <- (arbitrary :: Gen a)
     return (Just (element, arbitraryStamage))
 
@@ -70,4 +75,4 @@ oddEven = NextG $ do
 
 constOfG :: a -> Stamage a
 constOfG value = NextG $ return (Just (value, constOfG value))
-                       
+

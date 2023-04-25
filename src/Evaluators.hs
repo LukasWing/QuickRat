@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 module Evaluators where
-import qualified Generators as G
+import Generators
 import Helpers
 import Test.QuickCheck
 import Rattus.Stream hiding (const)
@@ -56,7 +56,6 @@ isHeadEqualSM (h ::: _) = NextT (\value ->
 
 -- Testables ------------------------------------------------------------------
 
-
 isConstCheck :: (Eq a) => Str a -> Bool
 isConstCheck aStr = stamateRun aStr (isConstSM Nothing)
 
@@ -87,5 +86,6 @@ strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
                     then strProbEq' (adv t)
                     else Pass
             )
-
-
+--- Stamage modifiers --------------------------------------------------------
+suchThatT :: Stamage a -> Stamate a -> Stamage a
+suchThatT _ _ = emptyStamage

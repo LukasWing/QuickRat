@@ -12,17 +12,17 @@ newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
 
 type StrPred a = a -> Bool 
 
--- 1 -- next up
+-- 1
 mkStamage :: Stamate a -> Stamage a
 mkStamage _ = errorNotImplemented
 
 mkStamate :: TPred a -> Stamate a
 mkStamate _ = errorNotImplemented
 
--- 2
+-- 2 Implement back tracking in v2
 suchThat :: Stamage a -> Stamate a -> Stamage a
 suchThat _ _ = errorNotImplemented
 
--- 3 Implement back tracking in v2
+-- 3 
 and :: Stamate a -> Stamate a -> Stamate a
 and _ _ = errorNotImplemented

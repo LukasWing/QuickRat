@@ -16,6 +16,9 @@ import Debug.Trace
 import Rattus.Stream hiding (filter, map)
 import Helpers
 import LTL
+import Test.QuickCheck.Monadic
+import qualified Test.QuickCheck.Monadic as M
+
 
 gcd' ::  Int -> Int -> Int
 gcd' a b
@@ -176,6 +179,26 @@ prop_1 (NonNegative n) = (n::Int) > (-1)
 prop_2 :: InfiniteList (NonNegative Int) -> Large Int -> Bool
 prop_2 (InfiniteList (xs :: [NonNegative Int]) _) (Large n) = getNonNegative (xs !! n) > ((-1)::Int)
 
+-- prop_monadic :: IO Int  -> Property
+-- prop_monadic :: IO Int -> PropertyM IO ()
+-- prop_monadic ::  Int -> Property
+m2 :: IO Int -> IO Int
+m2 = fmap (2*)
+m2' = ((2::Int)*)
+-- prop_monadic :: Property
+prop_monadic :: IO Int -> Property
+prop_monadic a = monadicIO $ do
+    a' <- Test.QuickCheck.Monadic.run (m2 a)
+    assert (a' == 4)
+
+
+f1 :: IO Int -> IO Int
+f1 = fmap (+1)
+prop_f :: Property
+prop_f = monadicIO $ do
+  x <- M.run (return 1)
+  y <- M.run (f1 (return x))
+  assert (y == x + 1)
 
 run = do
     quickCheck prop_1
@@ -186,7 +209,9 @@ run = do
     quickCheck prop_stackPushedIsPopped
     quickCheck prop_stackPushedIsPopped'
     runAsync
+    quickCheck prop_f
     print "Done"
+
 
 diceRoller :: Int -> Gen Int
 diceRoller nSides = do

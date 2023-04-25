@@ -31,11 +31,14 @@ prop_constOfG_3_allThrees :: Property
 prop_constOfG_3_allThrees =
     constOfG 3 `satisfies` Always (hasHead (3::Int))
 
+
+
 evenOddGenPair :: [Gen Int]
 evenOddGenPair = [
         (*2) <$> arbitrary,
         (.|. 1) <$> arbitrary
     ]
+
 
 nonChatty :: Args
 nonChatty = stdArgs {chatty = True}
