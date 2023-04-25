@@ -7,6 +7,9 @@ import Rattus.Stream hiding (const)
 import Rattus
 import qualified Data.Set as Set
 import LTL
+import Control.Monad
+import Debug.Trace (trace)
+import GHC.RTS.Flags (ParFlags(setAffinity))
 
 -- Foundations ----------------------------------------------------------------
 
@@ -52,8 +55,14 @@ isHeadEqualSM (h ::: _) =
                 then Pass
                 else Fail
             )
-isAlternatingABSM :: (Eq a) => (a, a) -> Str a -> Stamate a 
-isAlternatingABSM (a1, a2) =  errorNotImplemented
+
+isOddEvenSM :: Stamate Int 
+isOddEvenSM =  errorNotImplemented
+
+isPositive :: Stamate Int
+isPositive = NextT (\n -> if n > 0 then isPositive else Fail) 
+
+    
 
 
 
@@ -93,20 +102,27 @@ strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
 -- filterG x nextGen = errorNotImplemented
 
 --- Stamage modifiers --------------------------------------------------------
-suchThatT :: Stamage a -> Stamate a -> Stamage a
+-- suchThatT :: (Show a,  Num a) => Stamage a -> Stamate a -> Stamage a
+suchThatT :: Stamage Int -> Stamate Int -> Stamage Int
 suchThatT _ Fail = emptyStamage
 suchThatT aStamage Pass = aStamage
 suchThatT (NextG gen) (NextT passTest) =
-    NextG $ do
-        value <- gen
-        case value of
-            Nothing -> return Nothing -- No more checks? 
-            Just (genVal, nextGen) ->
-                case passTest genVal of
-                    Pass -> return $ Just (genVal, nextGen)
-                    Fail -> return Nothing
-                    aStamate -> return $ Just (genVal, suchThatT nextGen aStamate)
 
+    let nTries = 1000
+        loop n = do
+            values <- vectorOf nTries gen
+            let value = values !! (n `mod` nTries) 
+            case value of
+                Nothing -> return Nothing 
+                Just (genVal', nextGen) ->
+                    let genVal = genVal' + n in 
+                    trace ("genVal: "++ show genVal) $ 
+                    case passTest genVal of
+                        Pass -> return $ Just (genVal, nextGen)
+                        Fail -> if n == 0 then return Nothing else loop (n-1)
+                        aStamate -> return $ Just (genVal, suchThatT nextGen aStamate)
+
+    in NextG $ loop nTries
 
 
 

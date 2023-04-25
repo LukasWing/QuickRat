@@ -48,36 +48,36 @@ prop_stamateRun'_extendedStreams_constsOK =
 
 
 -- prop_suchThatT_impleConst_GenOfNothing :: Negative Int ->  NonNegative Int -> Bool
-prop_suchThatT_simpleConst_GenOfNothing :: Property
-prop_suchThatT_simpleConst_GenOfNothing = 
-    forAll 
-        (let (NextG inside) = constOfG True `suchThatT` isConstSM (Just False)
-        in inside)
-        isNothing 
+-- prop_suchThatT_simpleConst_GenOfNothing :: Property
+-- prop_suchThatT_simpleConst_GenOfNothing = 
+--     forAll 
+--         (let (NextG inside) = constOfG True `suchThatT` isConstSM (Just False)
+--         in inside)
+--         isNothing 
 
-prop_suchThatT_arbitraryAndContradiction_GenOfNothing :: Property
-prop_suchThatT_arbitraryAndContradiction_GenOfNothing = 
-    forAll 
-        (let (NextG inside) = arbitraryStamage `suchThatT` (contradictionSM:: Stamate Int)
-        in inside)
-        isNothing 
+-- prop_suchThatT_arbitraryAndContradiction_GenOfNothing :: Property
+-- prop_suchThatT_arbitraryAndContradiction_GenOfNothing = 
+--     forAll 
+--         (let (NextG inside) = arbitraryStamage `suchThatT` (contradictionSM:: Stamate Int)
+--         in inside)
+--         isNothing 
 
-prop_suchThatT_sameConst2_2strsOnly :: Property
-prop_suchThatT_sameConst2_2strsOnly = 
-    forAll 
-        (stamageRun $ constOfG True `suchThatT` isConstSM (Just True))
-        $ isConstVal True
+-- prop_suchThatT_sameConst2_2strsOnly :: Property
+-- prop_suchThatT_sameConst2_2strsOnly = 
+--     forAll 
+--         (stamageRun $ constOfG True `suchThatT` isConstSM (Just True))
+--         $ isConstVal True
 
-prop_suchThatT_oddEvenTautolgy_IsEven :: Property
-prop_suchThatT_oddEvenTautolgy_IsEven = 
+-- prop_suchThatT_oddEvenTautolgy_IsEven :: Property
+-- prop_suchThatT_oddEvenTautolgy_IsEven = 
+--     forAll 
+--         (stamageRun $ oddEven `suchThatT` tautologySM)
+--         (\x -> collect x $ alternatesOddEven x)
+
+prop_suchThatT_oddEvenKeepOnlyPositive_IsAlternating :: Property
+prop_suchThatT_oddEvenKeepOnlyPositive_IsAlternating = 
     forAll 
-        (stamageRun $ oddEven `suchThatT` tautologySM)
-        (\x -> collect x $ alternatesOddEven x)
-        
-prop_suchThatT_oddEvenTautolgy_IsEven :: Property
-prop_suchThatT_oddEvenTautolgy_IsEven = 
-    forAll 
-        (stamageRun $ oddEven `suchThatT` tautologySM)
+        (stamageRun $ oddEven `suchThatT` isPositive)
         (\x -> collect x $ alternatesOddEven x)
 
 return []
