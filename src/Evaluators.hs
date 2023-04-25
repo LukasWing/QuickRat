@@ -46,11 +46,14 @@ isConstSM input =
     Nothing -> NextT (isConstSM . Just)
 
 isHeadEqualSM ::(Eq a) => Str a -> Stamate a
-isHeadEqualSM (h ::: _) = NextT (\value ->
-                                    if h == value
-                                        then Pass
-                                        else Fail
-                                    )
+isHeadEqualSM (h ::: _) = 
+    NextT (\value ->
+            if h == value
+                then Pass
+                else Fail
+            )
+isAlternatingABSM :: (Eq a) => (a, a) -> Str a -> Stamate a 
+isAlternatingABSM (a1, a2) =  errorNotImplemented
 
 
 
@@ -86,6 +89,25 @@ strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
                     then strProbEq' (adv t)
                     else Pass
             )
+-- filterG :: a -> Stamage a -> Stamage a
+-- filterG x nextGen = errorNotImplemented
+
 --- Stamage modifiers --------------------------------------------------------
 suchThatT :: Stamage a -> Stamate a -> Stamage a
-suchThatT _ _ = emptyStamage
+suchThatT _ Fail = emptyStamage
+suchThatT aStamage Pass = aStamage
+suchThatT (NextG gen) (NextT passTest) =
+    NextG $ do
+        value <- gen
+        case value of
+            Nothing -> return Nothing -- No more checks? 
+            Just (genVal, nextGen) ->
+                case passTest genVal of
+                    Pass -> return $ Just (genVal, nextGen)
+                    Fail -> return Nothing
+                    aStamate -> return $ Just (genVal, suchThatT nextGen aStamate)
+
+
+
+
+

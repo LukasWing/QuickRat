@@ -1,5 +1,9 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+
+-- your code here
+
 module EvaluatorTest (
     runTests
 ) where
@@ -68,7 +72,13 @@ prop_suchThatT_oddEvenTautolgy_IsEven :: Property
 prop_suchThatT_oddEvenTautolgy_IsEven = 
     forAll 
         (stamageRun $ oddEven `suchThatT` tautologySM)
-        alternatesOddEven
+        (\x -> collect x $ alternatesOddEven x)
+        
+prop_suchThatT_oddEvenTautolgy_IsEven :: Property
+prop_suchThatT_oddEvenTautolgy_IsEven = 
+    forAll 
+        (stamageRun $ oddEven `suchThatT` tautologySM)
+        (\x -> collect x $ alternatesOddEven x)
 
 return []
 runTests :: IO Bool
