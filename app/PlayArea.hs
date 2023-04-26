@@ -200,18 +200,6 @@ prop_f = monadicIO $ do
   y <- M.run (f1 (return x))
   assert (y == x + 1)
 
-run = do
-    quickCheck prop_1
-    quickCheck prop_2
-    print $ addStuff "Hey"
-    print $ twoCoins (mkStdGen 100)
-    let (exp,_) = runState (stackManip 4) [7]
-    quickCheck prop_stackPushedIsPopped
-    quickCheck prop_stackPushedIsPopped'
-    runAsync
-    quickCheck prop_f
-    print "Done"
-
 
 diceRoller :: Int -> Gen Int
 diceRoller nSides = do
@@ -220,3 +208,57 @@ diceRoller nSides = do
 
 genMe :: IO Int
 genMe = generate (arbitrary :: Gen Int)
+
+sAnd' :: Stamate a -> Stamate a -> Stamate a
+sAnd' _ _ = errorNotImplemented
+
+data Stamate a = Pass
+                | Fail
+                | NextT (a -> Stamate a)
+instance Show (Stamate a) where
+    show Pass = "P"
+    show Fail = "F" 
+    show (NextT _) = "N" 
+
+x1Even :: Stamate Integer
+x1Even = NextT (\x -> if even x then Pass else Fail)
+x2Odd :: Stamate Integer
+x2Odd = NextT (\_ -> NextT (\x1 -> if odd x1 then Pass else Fail))
+qAndp :: Stamate Integer
+qAndp = NextT (\x1 -> if even x1
+                        then NextT (\x2 -> if odd x2 then Pass else Fail)
+                        else Fail)
+
+andT :: Stamate a -> Stamate a -> Stamate a
+andT (NextT fq) (NextT fp) = 
+    NextT $ \x1 -> 
+        case fq x1 of 
+            Pass -> NextT fp
+            Fail -> Fail
+            _ -> Fail
+andT _ _ = Fail  
+
+andT' :: Stamate a -> Stamate a -> Stamate a
+andT' (NextT fq) (NextT fp) = 
+    NextT $ \x1 -> 
+        case fq x1 of 
+            Pass -> NextT fp
+            Fail -> Fail
+            _ -> Fail
+
+
+run = do
+    let NextT firstCheck = x1Even `andT` x2Odd --qAndp
+    print $ firstCheck 2
+    let NextT secondCheck = firstCheck 2
+    print $ secondCheck 3
+    let NextT thirdCheck = secondCheck 3
+    print $ thirdCheck 3
+
+
+
+
+  
+
+
+    print "Done"

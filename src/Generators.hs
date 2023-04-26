@@ -19,15 +19,16 @@ import LTL
 newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
 
 
-getJust (Just a) = a
-getJust Nothing = error "Runner should get Nothing"
 
-stamageRun :: Stamage a -> Gen (Str a)
+
+stamageRun :: Stamage a -> Gen (Str a) -- perhaps a maybe here?
 stamageRun (NextG aGen) = do
     aMaybe <- aGen
     let (value, aStamage) = getJust aMaybe
     rest <- stamageRun aStamage
     return $ value ::: delay rest
+    where   getJust (Just a) = a
+            getJust Nothing = error "Generator ran out of values"
 
 
 instance (Arbitrary a) => Arbitrary (Str a) where

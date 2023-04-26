@@ -7,7 +7,7 @@
 module EvaluatorTest (
     runTests
 ) where
-import Generators hiding (next)
+import Generators
 import Evaluators
 import Helpers
 import Test.QuickCheck
@@ -15,8 +15,7 @@ import Test.QuickCheck.Modifiers
 import Rattus.Stream hiding (const)
 import Test.QuickCheck.Monadic
 import Data.Maybe (isNothing)
-import LTL (tautology, alternatesOddEven)
-import Evaluators (mkStamage)
+import LTL 
 
 
 prop_seesConst :: Int -> Bool
@@ -72,13 +71,23 @@ prop_suchThatT_oddEvenKeepOnlyPositive_IsOddEven =
         (stamageRun $ oddEven `suchThatT` isPositive)
         (\aStr -> collect aStr $ alternatesOddEven aStr)
 
-
-
 prop_mkStamage_trueConst_isTrueConst :: Property
 prop_mkStamage_trueConst_isTrueConst = 
     forAll 
         (stamageRun $ mkStamage $ isConstSM (Just True))
         $ isConstVal True
+
+-- prop_mkStamage_12345678_is12345678 :: Property
+prop_mkStamage_constOf8_isConstOf8 :: Property
+prop_mkStamage_constOf8_isConstOf8 =
+    forAll
+        (stamageRun $ mkStamage $ isConstSM (Just (8::Int)))
+        $ isConstVal 8
+prop_sAnd_oddEvenAndTautology_oddEven :: Property 
+prop_sAnd_oddEvenAndTautology_oddEven =
+    forAll 
+        (stamageRun $ constOfG 3)
+        $ \aStr -> collect aStr $ stamateRun' aStr (isPositive `sAnd` tautologySM')
 
 return []
 runTests :: IO Bool

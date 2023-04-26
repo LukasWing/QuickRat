@@ -10,7 +10,8 @@ import LTL
 import Control.Monad
 import Debug.Trace (trace)
 import GHC.RTS.Flags (ParFlags(setAffinity))
-import TypeFromMeeting (mkStamage)
+import TypeFromMeeting (mkStamage, mkStamate)
+import Data.Bits (Bits(xor))
 
 -- Foundations ----------------------------------------------------------------
 
@@ -31,6 +32,9 @@ stamateRun' (h ::: t) (NextT makeNext) checksLeft =
             continuation -> stamateRun' (adv t) continuation (checksLeft - 1))
 -- State Machines -------------------------------------------------------------
 
+tautologySM' :: Stamate a
+tautologySM' = Pass
+
 tautologySM :: Stamate a
 tautologySM = NextT (const Pass)
 
@@ -50,21 +54,16 @@ isConstSM input =
     Nothing -> NextT (isConstSM . Just)
 
 isHeadEqualSM ::(Eq a) => Str a -> Stamate a
-isHeadEqualSM (h ::: _) = 
+isHeadEqualSM (h ::: _) =
     NextT (\value ->
             if h == value
                 then Pass
                 else Fail
             )
 
-isOddEvenSM :: Stamate Int 
-isOddEvenSM =  errorNotImplemented
 
 isPositive :: Stamate Int
-isPositive = NextT (\n -> if n > 0 then isPositive else Fail) 
-
-    
-
+isPositive = NextT (\n -> if n > 0 then isPositive else Fail)
 
 
 -- Testables ------------------------------------------------------------------
@@ -99,20 +98,18 @@ strProbEq s1 s2 = stamateRun s1 $ strProbEq' s2
                     then strProbEq' (adv t)
                     else Pass
             )
--- filterG :: a -> Stamage a -> Stamage a
--- filterG x nextGen = errorNotImplemented
 
 --- Stamage modifiers --------------------------------------------------------
 suchThatT :: Stamage a -> Stamate a -> Stamage a
 suchThatT _ Fail = emptyStamage
 suchThatT aStamage Pass = aStamage
 suchThatT (NextG gen) (NextT passTest) =
-    let nTries = 100
+    let nTries = 1000
         sizeSuggest = 10
         loop n = do
-            value <- resize sizeSuggest gen 
+            value <- resize sizeSuggest gen
             case value of
-                Nothing -> return Nothing 
+                Nothing -> return Nothing
                 Just (genVal, nextGen) ->
                     -- trace ("genVal: "++ show genVal) $ 
                     case passTest genVal of
@@ -122,8 +119,59 @@ suchThatT (NextG gen) (NextT passTest) =
     in NextG $ loop (nTries::Int)
 
 
-mkStamage :: (Arbitrary a) => Stamate a -> Stamage a 
-mkStamage aStamate = arbitraryStamage `suchThatT` aStamate 
+-- Move 
+mkStamage :: (Arbitrary a) => Stamate a -> Stamage a
+mkStamage aStamate = arbitraryStamage `suchThatT` aStamate
 
 
 
+mkStamate' :: TPred a -> Stamate a
+mkStamate' formulae =
+    case formulae of
+            SP headPred     -> NextT (\h -> if headPred h then Pass else Fail)
+            Not aTPred      -> errorNotImplemented
+            Or phi psi      -> errorNotImplemented
+            -- And phi psi     -> NextT (\x1 -> NextT $
+            --                             case mkStamate' phi of 
+            --                                 Pass -> \x2 -> mkStamate' psi
+            --                                 Fail -> \_ -> Fail
+            --                                 NextT nextGPhi -> \x2 -> mkStamate' nextPhi  
+                                            
+            Implies phi psi -> errorNotImplemented
+            Imminently phi  -> mkStamate' phi
+            Eventually phi  -> case mkStamate' phi of
+                                Pass -> Pass
+                                Fail -> mkStamate' $ Eventually phi
+                                NextT nextF -> NextT nextF
+            Until phi psi   ->  mkStamate' phi 
+            Always phi      -> errorNotImplemented
+            After anInt phi -> if anInt == 0
+                                then mkStamate' phi
+                                else mkStamate' (After (anInt - 1) phi)
+            _ -> errorNotImplemented
+
+
+
+-- sAnd st1 st2 = NextT $ f st1 st2
+--   where
+--     f Fail _ _ = Fail
+--     f _ Fail _ = Fail
+--     f Pass Pass _ = Pass
+--     f Pass (NextT t1) x = sAnd Pass (t1 x) 
+--     f (NextT t1) Pass x = sAnd Pass (t1 x)
+--     f (NextT t1) (NextT t2) x = sAnd (t1 x) (t2 x) 
+
+-- sAnd :: Stamate a -> Stamate a -> Stamate a
+-- sAnd Pass Pass = Pass
+-- sAnd _ Fail = Fail
+-- sAnd Fail _ = Fail
+-- sAnd (NextT t1) Pass = NextT $ \x -> sAnd (t1 x) Pass
+-- sAnd Pass (NextT t2) = NextT $ \x -> sAnd Pass (t2 x)
+-- sAnd (NextT t1) (NextT t2) = NextT $ \x -> sAnd (t1 x) (t2 x)
+
+    -- where 
+        -- f:: Stamate a -> Stamate a -> a -> Stamate a
+        -- f = 
+        -- f Pass (NextT testerF)  x = testerF x
+        -- f (NextT testerF) Pass  x = testerF x
+        -- f (NextT testerF1) (NextT testerF2) = f (testerF1 x) (testerF2 x) 
