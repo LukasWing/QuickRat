@@ -192,12 +192,12 @@ prop_monadic a = monadicIO $ do
     assert (a' == 4)
 
 
-f1 :: IO Int -> IO Int
-f1 = fmap (+1)
+f1' :: IO Int -> IO Int
+f1' = fmap (+1)
 prop_f :: Property
 prop_f = monadicIO $ do
   x <- M.run (return 1)
-  y <- M.run (f1 (return x))
+  y <- M.run (f1' (return x))
   assert (y == x + 1)
 
 
@@ -217,8 +217,8 @@ data Stamate a = Pass
                 | NextT (a -> Stamate a)
 instance Show (Stamate a) where
     show Pass = "P"
-    show Fail = "F" 
-    show (NextT _) = "N" 
+    show Fail = "F"
+    show (NextT _) = "N"
 
 x1Even :: Stamate Integer
 x1Even = NextT (\x -> if even x then Pass else Fail)
@@ -230,21 +230,28 @@ qAndp = NextT (\x1 -> if even x1
                         else Fail)
 
 andT :: Stamate a -> Stamate a -> Stamate a
-andT (NextT fq) (NextT fp) = 
-    NextT $ \x1 -> 
-        case fq x1 of 
+andT (NextT fq) (NextT fp) =
+    NextT $ \x1 ->
+        case fq x1 of
             Pass -> NextT fp
             Fail -> Fail
             _ -> Fail
-andT _ _ = Fail  
+andT _ _ = Fail
 
 andT' :: Stamate a -> Stamate a -> Stamate a
-andT' (NextT fq) (NextT fp) = 
-    NextT $ \x1 -> 
-        case fq x1 of 
-            Pass -> NextT fp
+andT' (NextT f1) (NextT f2) =
+    NextT $ \x1 ->
+        trace ("debug:"++ show (NextT f1)) $
+        case f1 x1 of
+            Pass -> NextT f2
             Fail -> Fail
-            _ -> Fail
+            NextT f1Inner -> NextT f1Inner `andT'` f2 x1
+
+andT' Fail _ = Fail
+andT' _ Fail = Fail
+andT' Pass Pass = Fail
+andT' Pass st1 = st1
+andT' st2 Pass = st2
 
 
 run = do
@@ -255,10 +262,17 @@ run = do
     let NextT thirdCheck = secondCheck 3
     print $ thirdCheck 3
 
+    let NextT firstCheck = x2Odd `andT'` x1Even --qAndp
+    print $ firstCheck 3
 
+    let NextT secondCheck = firstCheck 2
+    print $ secondCheck 3
 
-
-  
-
+    let NextT firstCheck = x1Even `andT'` x2Odd --qAndp
+    print $ firstCheck 2
+    let NextT secondCheck = firstCheck 2
+    print $ secondCheck 3
+    let NextT thirdCheck = secondCheck 3
+    print $ thirdCheck 3
 
     print "Done"
