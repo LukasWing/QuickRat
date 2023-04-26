@@ -122,7 +122,8 @@ suchThatT (NextG gen) (NextT passTest) =
     in NextG $ loop (nTries::Int)
 
 
-
+mkStamage :: (Arbitrary a) => Stamate a -> Stamage a 
+mkStamage aStamate = arbitraryStamage `suchThatT` aStamate 
 
 
 

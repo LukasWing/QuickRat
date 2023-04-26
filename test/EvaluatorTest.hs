@@ -16,6 +16,7 @@ import Rattus.Stream hiding (const)
 import Test.QuickCheck.Monadic
 import Data.Maybe (isNothing)
 import LTL (tautology, alternatesOddEven)
+import Evaluators (mkStamage)
 
 
 prop_seesConst :: Int -> Bool
@@ -70,6 +71,14 @@ prop_suchThatT_oddEvenKeepOnlyPositive_IsOddEven =
     forAll 
         (stamageRun $ oddEven `suchThatT` isPositive)
         (\aStr -> collect aStr $ alternatesOddEven aStr)
+
+
+
+prop_mkStamage_trueConst_isTrueConst :: Property
+prop_mkStamage_trueConst_isTrueConst = 
+    forAll 
+        (stamageRun $ mkStamage $ isConstSM (Just True))
+        $ isConstVal True
 
 return []
 runTests :: IO Bool

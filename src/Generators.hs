@@ -11,7 +11,6 @@ import Rattus.Primitives
 import Test.QuickCheck hiding ((.&.))
 import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
-
 import qualified Data.Set as Set
 import LTL
 
@@ -75,4 +74,3 @@ oddEven = NextG $ do
 
 constOfG :: a -> Stamage a
 constOfG value = NextG $ return (Just (value, constOfG value))
-
