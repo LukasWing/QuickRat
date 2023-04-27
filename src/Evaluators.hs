@@ -11,6 +11,7 @@ import Control.Monad
 import Debug.Trace (trace)
 import GHC.RTS.Flags (ParFlags(setAffinity))
 import Data.Bits (Bits(xor))
+import LTL (TPred(Imminently))
 
 -- Foundations ----------------------------------------------------------------
 
@@ -133,21 +134,27 @@ mkStamate :: TPred a -> Stamate a
 mkStamate formulae =
     case formulae of
             SP headPred     -> NextT (\h -> if headPred h then Pass else Fail)
-            Not aTPred      -> errorNotImplemented
-            Or phi psi      -> errorNotImplemented
+            Not phi         -> case mkStamate phi of 
+                                Pass -> Fail
+                                Fail -> Pass
+                                NextT nextF -> NextT $ \e -> 
+                                    case nextF e of
+                                        Pass -> Fail
+                                        Fail -> Pass
+                                        NextT nextF2 -> _ -- ?
+            Or phi psi      -> mkStamate (Not (Not phi `And` Not psi)) -- De Morgans
             And phi psi     -> mkStamate phi `andT'` mkStamate psi                                           
-            Implies phi psi -> errorNotImplemented
+            Implies phi psi -> mkStamate (Not phi `Or` psi) 
             Imminently phi  -> mkStamate phi
             Eventually phi  -> case mkStamate phi of
                                 Pass -> Pass
                                 Fail -> mkStamate $ Eventually phi
-                                NextT nextF -> NextT nextF
+                                NextT nextF -> NextT nextF -- ?
             Until phi psi   ->  mkStamate phi 
-            Always phi      -> errorNotImplemented
+            Always phi      ->  mkStamate phi `And` Always (Imminently phi)
             After anInt phi -> if anInt == 0
                                 then mkStamate phi
                                 else mkStamate (After (anInt - 1) phi)
-            _ -> errorNotImplemented
 
 andT' :: Stamate a -> Stamate a -> Stamate a
 andT' (NextT f1) (NextT f2) =
@@ -163,6 +170,10 @@ andT' _ Fail = Fail
 andT' Pass Pass = Pass
 andT' Pass st1 = st1
 andT' st2 Pass = st2
+
+
+
+
 
 
 
