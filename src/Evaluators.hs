@@ -10,7 +10,6 @@ import LTL
 import Control.Monad
 import Debug.Trace (trace)
 import GHC.RTS.Flags (ParFlags(setAffinity))
-import TypeFromMeeting (mkStamage, mkStamate)
 import Data.Bits (Bits(xor))
 
 -- Foundations ----------------------------------------------------------------
@@ -130,24 +129,24 @@ mkStamage aStamate = arbitraryStamage `suchThatT` aStamate
 
 
 
-mkStamate' :: TPred a -> Stamate a
-mkStamate' formulae =
+mkStamate :: TPred a -> Stamate a
+mkStamate formulae =
     case formulae of
             SP headPred     -> NextT (\h -> if headPred h then Pass else Fail)
             Not aTPred      -> errorNotImplemented
             Or phi psi      -> errorNotImplemented
-            And phi psi     -> mkStamate' phi `andT'` mkStamate' psi                                           
+            And phi psi     -> mkStamate phi `andT'` mkStamate psi                                           
             Implies phi psi -> errorNotImplemented
-            Imminently phi  -> mkStamate' phi
-            Eventually phi  -> case mkStamate' phi of
+            Imminently phi  -> mkStamate phi
+            Eventually phi  -> case mkStamate phi of
                                 Pass -> Pass
-                                Fail -> mkStamate' $ Eventually phi
+                                Fail -> mkStamate $ Eventually phi
                                 NextT nextF -> NextT nextF
-            Until phi psi   ->  mkStamate' phi 
+            Until phi psi   ->  mkStamate phi 
             Always phi      -> errorNotImplemented
             After anInt phi -> if anInt == 0
-                                then mkStamate' phi
-                                else mkStamate' (After (anInt - 1) phi)
+                                then mkStamate phi
+                                else mkStamate (After (anInt - 1) phi)
             _ -> errorNotImplemented
 
 andT' :: Stamate a -> Stamate a -> Stamate a
@@ -158,7 +157,7 @@ andT' (NextT f1) (NextT f2) =
             Pass -> NextT f2
             Fail -> Fail
             NextT f1Inner -> NextT f1Inner `andT'` f2 x1
-            
+
 andT' Fail _ = Fail
 andT' _ Fail = Fail
 andT' Pass Pass = Pass

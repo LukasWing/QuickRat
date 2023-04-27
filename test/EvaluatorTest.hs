@@ -85,6 +85,13 @@ prop_mkStamage_constOf8_isConstOf8 =
         (stamageRun $ mkStamage $ isConstSM (Just (8::Int)))
         $ isConstVal 8
 
+prop_mkStamate_x1EvenX2Odd_holdOnStreams :: Property
+prop_mkStamate_x1EvenX2Odd_holdOnStreams = 
+    forAll 
+        (mkStamate $ SP even `And` Imminently (SP odd))
+        $ \aStamate  -> stamateRun (strExtend [2,1]) aStamate
+
+
 
 x1Even :: Stamate Int
 x1Even = NextT (\x -> if even x then Pass else Fail)
