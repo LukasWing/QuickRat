@@ -12,7 +12,6 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
-import Data.Bits ((.|.))
 
 hasHead :: (Eq p) => p -> TPred p
 hasHead expectedHead = SP (==expectedHead)
@@ -35,8 +34,8 @@ prop_constOfG_3_allThrees =
 
 evenOddGenPair :: [Gen Int]
 evenOddGenPair = [
-        (*2) <$> arbitrary,
-        (.|. 1) <$> arbitrary
+        evenGen,
+        oddGen
     ]
 
 

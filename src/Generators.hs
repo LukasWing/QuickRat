@@ -18,9 +18,6 @@ import LTL
 -- Foundations -------------------------------------------------------------
 newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
 
-
-
-
 stamageRun :: Stamage a -> Gen (Str a) -- perhaps a maybe here?
 stamageRun (NextG aGen) = do
     aMaybe <- aGen
@@ -63,14 +60,20 @@ padList :: (Arbitrary a ) => [a] -> Stamage a
 padList (h:t) = NextG $ return (Just (h, padList t))
 padList [] = arbitraryStamage
 
+oddGen :: Gen Int
+oddGen = (.|.) 1 <$> arbitrary
+
+evenGen :: Gen Int
+evenGen = (2*) <$> arbitrary
+
 evenOdd :: Stamage Int
 evenOdd = NextG $ do
-        value <- (*2) <$> (arbitrary:: Gen Int)
+        value <- evenGen
         return $ Just (value, oddEven)
 
 oddEven :: Stamage Int
 oddEven = NextG $ do
-        value <- (.|. 1) <$> arbitrary
+        value <- oddGen
         return $ Just (value, evenOdd)
 
 constOfG :: a -> Stamage a

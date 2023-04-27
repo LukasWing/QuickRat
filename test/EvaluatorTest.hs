@@ -13,9 +13,10 @@ import Helpers
 import Test.QuickCheck
 import Test.QuickCheck.Modifiers
 import Rattus.Stream hiding (const)
-import Test.QuickCheck.Monadic
+import Test.QuickCheck.Monadic ()
 import Data.Maybe (isNothing)
 import LTL 
+import Control.Monad (liftM2)
 
 
 prop_seesConst :: Int -> Bool
@@ -83,11 +84,49 @@ prop_mkStamage_constOf8_isConstOf8 =
     forAll
         (stamageRun $ mkStamage $ isConstSM (Just (8::Int)))
         $ isConstVal 8
-prop_sAnd_oddEvenAndTautology_oddEven :: Property 
-prop_sAnd_oddEvenAndTautology_oddEven =
-    forAll 
-        (stamageRun $ constOfG 3)
-        $ \aStr -> collect aStr $ stamateRun' aStr (isPositive `sAnd` tautologySM')
+
+
+x1Even :: Stamate Int
+x1Even = NextT (\x -> if even x then Pass else Fail)
+
+x2Odd :: Stamate Int
+x2Odd = NextT (\_ -> NextT (\x1 -> if odd x1 then Pass else Fail))
+
+qAndp :: Stamate Int
+qAndp = NextT (\x1 -> if even x1
+                        then NextT (\x2 -> if odd x2 then Pass else Fail)
+                        else Fail)
+
+prop_andT'_x1Evenx2Odd_23Passes :: Property
+prop_andT'_x1Evenx2Odd_23Passes = 
+    forAll
+        (liftM2 (,) oddGen evenGen)
+        $ \(oddN, evenN) -> 
+            let NextT firstCheck = x1Even `andT'` x2Odd --qAndp
+                NextT secondCheck = firstCheck evenN
+                NextT thirdCheck = secondCheck oddN
+            in  show (firstCheck evenN) == "N"
+                && show (secondCheck evenN) == "N"
+                && show (thirdCheck oddN) == "P"
+
+prop_andT'_x2Oddx1Even_23Passes :: Property
+prop_andT'_x2Oddx1Even_23Passes = 
+    forAll
+        (liftM2 (,) oddGen evenGen)
+        $ \(oddN, evenN) -> 
+            let NextT firstCheck = x2Odd `andT'` x1Even 
+                NextT secondCheck = firstCheck evenN
+            in  show (firstCheck evenN) == "N"
+                && show (secondCheck oddN) == "P"
+
+prop_andT'_x2Oddx1Even_oddFails :: Property
+prop_andT'_x2Oddx1Even_oddFails = 
+    forAll
+        oddGen
+        $ \oddN -> 
+            let NextT firstCheck = x2Odd `andT'` x1Even 
+            in  show (firstCheck oddN) == "F"
+
 
 return []
 runTests :: IO Bool

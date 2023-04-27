@@ -19,6 +19,11 @@ data Stamate a = Pass
                 | Fail
                 | NextT (a -> Stamate a)
 
+instance Show (Stamate a) where
+    show Pass = "P"
+    show Fail = "F"
+    show (NextT _) = "N"
+
 stamateRun :: Str a -> Stamate a -> Bool
 stamateRun aStr aStamate  = stamateRun' aStr aStamate 20
 
@@ -131,12 +136,7 @@ mkStamate' formulae =
             SP headPred     -> NextT (\h -> if headPred h then Pass else Fail)
             Not aTPred      -> errorNotImplemented
             Or phi psi      -> errorNotImplemented
-            -- And phi psi     -> NextT (\x1 -> NextT $
-            --                             case mkStamate' phi of 
-            --                                 Pass -> \x2 -> mkStamate' psi
-            --                                 Fail -> \_ -> Fail
-            --                                 NextT nextGPhi -> \x2 -> mkStamate' nextPhi  
-                                            
+            And phi psi     -> mkStamate' phi `andT'` mkStamate' psi                                           
             Implies phi psi -> errorNotImplemented
             Imminently phi  -> mkStamate' phi
             Eventually phi  -> case mkStamate' phi of
@@ -149,6 +149,21 @@ mkStamate' formulae =
                                 then mkStamate' phi
                                 else mkStamate' (After (anInt - 1) phi)
             _ -> errorNotImplemented
+
+andT' :: Stamate a -> Stamate a -> Stamate a
+andT' (NextT f1) (NextT f2) =
+    NextT $ \x1 ->
+        -- trace ("debug:"++ show (NextT f1)) $
+        case f1 x1 of
+            Pass -> NextT f2
+            Fail -> Fail
+            NextT f1Inner -> NextT f1Inner `andT'` f2 x1
+            
+andT' Fail _ = Fail
+andT' _ Fail = Fail
+andT' Pass Pass = Pass
+andT' Pass st1 = st1
+andT' st2 Pass = st2
 
 
 

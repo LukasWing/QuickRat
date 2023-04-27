@@ -18,6 +18,7 @@ import Helpers
 import LTL
 import Test.QuickCheck.Monadic
 import qualified Test.QuickCheck.Monadic as M
+import Data.Bits ((.|.))
 
 
 gcd' ::  Int -> Int -> Int
@@ -215,20 +216,20 @@ sAnd' _ _ = errorNotImplemented
 data Stamate a = Pass
                 | Fail
                 | NextT (a -> Stamate a)
-instance Show (Stamate a) where
-    show Pass = "P"
-    show Fail = "F"
-    show (NextT _) = "N"
 
-x1Even :: Stamate Integer
-x1Even = NextT (\x -> if even x then Pass else Fail)
-x2Odd :: Stamate Integer
-x2Odd = NextT (\_ -> NextT (\x1 -> if odd x1 then Pass else Fail))
-qAndp :: Stamate Integer
-qAndp = NextT (\x1 -> if even x1
-                        then NextT (\x2 -> if odd x2 then Pass else Fail)
-                        else Fail)
 
+
+
+-- N
+-- N
+-- P
+-- debug:N
+-- F
+-- debug:N
+-- P
+-- debug:N
+
+-- "Done"
 andT :: Stamate a -> Stamate a -> Stamate a
 andT (NextT fq) (NextT fp) =
     NextT $ \x1 ->
@@ -238,41 +239,10 @@ andT (NextT fq) (NextT fp) =
             _ -> Fail
 andT _ _ = Fail
 
-andT' :: Stamate a -> Stamate a -> Stamate a
-andT' (NextT f1) (NextT f2) =
-    NextT $ \x1 ->
-        trace ("debug:"++ show (NextT f1)) $
-        case f1 x1 of
-            Pass -> NextT f2
-            Fail -> Fail
-            NextT f1Inner -> NextT f1Inner `andT'` f2 x1
+-- prop_andT'_x1Even_x2Odd_23Passes :: Bool
 
-andT' Fail _ = Fail
-andT' _ Fail = Fail
-andT' Pass Pass = Fail
-andT' Pass st1 = st1
-andT' st2 Pass = st2
 
 
 run = do
-    let NextT firstCheck = x1Even `andT` x2Odd --qAndp
-    print $ firstCheck 2
-    let NextT secondCheck = firstCheck 2
-    print $ secondCheck 3
-    let NextT thirdCheck = secondCheck 3
-    print $ thirdCheck 3
-
-    let NextT firstCheck = x2Odd `andT'` x1Even --qAndp
-    print $ firstCheck 3
-
-    let NextT secondCheck = firstCheck 2
-    print $ secondCheck 3
-
-    let NextT firstCheck = x1Even `andT'` x2Odd --qAndp
-    print $ firstCheck 2
-    let NextT secondCheck = firstCheck 2
-    print $ secondCheck 3
-    let NextT thirdCheck = secondCheck 3
-    print $ thirdCheck 3
-
+   
     print "Done"
