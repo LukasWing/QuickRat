@@ -134,27 +134,23 @@ mkStamate :: TPred a -> Stamate a
 mkStamate formulae =
     case formulae of
             SP headPred     -> NextT (\h -> if headPred h then Pass else Fail)
-            Not phi         -> case mkStamate phi of 
-                                Pass -> Fail
-                                Fail -> Pass
-                                NextT nextF -> NextT $ \e -> 
-                                    case nextF e of
-                                        Pass -> Fail
-                                        Fail -> Pass
-                                        NextT nextF2 -> _ -- ?
+            Not phi         -> negateStamate $ mkStamate phi
             Or phi psi      -> mkStamate (Not (Not phi `And` Not psi)) -- De Morgans
-            And phi psi     -> mkStamate phi `andT'` mkStamate psi                                           
-            Implies phi psi -> mkStamate (Not phi `Or` psi) 
-            Imminently phi  -> mkStamate phi
-            Eventually phi  -> case mkStamate phi of
-                                Pass -> Pass
-                                Fail -> mkStamate $ Eventually phi
-                                NextT nextF -> NextT nextF -- ?
-            Until phi psi   ->  mkStamate phi 
-            Always phi      ->  mkStamate phi `And` Always (Imminently phi)
-            After anInt phi -> if anInt == 0
-                                then mkStamate phi
-                                else mkStamate (After (anInt - 1) phi)
+            And phi psi     -> mkStamate phi `andT'` mkStamate psi
+            Implies phi psi -> mkStamate (Not phi `Or` psi)
+            Imminently phi  -> NextT (\_ -> mkStamate phi)
+            Eventually phi  -> mkStamate $ phi `Or` Imminently (Eventually phi)
+            Until phi psi   -> mkStamate $ psi `Or` Imminently (phi `Until` psi)
+            Always phi      -> mkStamate $ phi `And` Imminently (Always phi)
+            After anInt phi -> mkStamate $ if anInt == 0
+                                            then phi
+                                            else Imminently (After (anInt - 1) phi)
+
+negateStamate :: Stamate a -> Stamate a
+negateStamate Fail = Pass
+negateStamate Pass = Fail
+negateStamate (NextT f) =  NextT (negateStamate . f)
+
 
 andT' :: Stamate a -> Stamate a -> Stamate a
 andT' (NextT f1) (NextT f2) =
