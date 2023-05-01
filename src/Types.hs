@@ -1,5 +1,9 @@
 {-# LANGUAGE GADTs #-}
-module Types where
+module Types (
+    TPred(..),
+    Stamate(..),
+    Stamage(..),
+) where 
 import Test.QuickCheck (Gen)
 
 data TPred a where

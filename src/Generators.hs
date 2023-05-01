@@ -14,25 +14,13 @@ import Control.Monad.State
 import qualified Data.Set as Set
 import LTL
 import Types
-
+import Functions
 
 -- Foundations -------------------------------------------------------------
-stamageRun :: Stamage a -> Gen (Str a) -- perhaps a maybe here?
-stamageRun (NextG aGen) = do
-    aMaybe <- aGen
-    let (value, aStamage) = getJust aMaybe
-    rest <- stamageRun aStamage
-    return $ value ::: delay rest
-    where   getJust (Just a) = a
-            getJust Nothing = error "Generator ran out of values"
-
-
 instance (Arbitrary a) => Arbitrary (Str a) where
     arbitrary = stamageRun arbitraryStamage
 
 
-emptyStamage :: Stamage a
-emptyStamage = NextG (return Nothing)
 -- isStamageContradiction (NextG (Just _)) = False
 
 -- Stream Generators ----------------------------------------------------------
@@ -44,12 +32,6 @@ constStrOf ::  a -> Gen (Str a)
 constStrOf value = stamageRun $ constOfG value
 
 --- Stamage producers ---------------------------------------------------------
-
-arbitraryStamage :: forall a. (Arbitrary a) => Stamage a
-arbitraryStamage = NextG $ do
-    element <- (arbitrary :: Gen a)
-    return (Just (element, arbitraryStamage))
-
 stamageOfStr :: Str a -> Stamage a
 stamageOfStr (h ::: t) = NextG $ return $ Just (h, stamageOfStr (adv t))
 
