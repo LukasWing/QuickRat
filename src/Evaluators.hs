@@ -9,21 +9,8 @@ import qualified Data.Set as Set
 import LTL
 import Control.Monad
 import Debug.Trace (trace)
-import GHC.RTS.Flags (ParFlags(setAffinity))
-import Data.Bits (Bits(xor))
-import LTL (TPred(Imminently))
-
+import Types
 -- Foundations ----------------------------------------------------------------
-
-data Stamate a = Pass
-                | Fail
-                | NextT (a -> Stamate a)
-
-instance Show (Stamate a) where
-    show Pass = "P"
-    show Fail = "F"
-    show (NextT _) = "N"
-
 stamateRun :: Str a -> Stamate a -> Bool
 stamateRun aStr aStamate  = stamateRun' aStr aStamate 20
 
@@ -166,33 +153,3 @@ andT' _ Fail = Fail
 andT' Pass Pass = Pass
 andT' Pass st1 = st1
 andT' st2 Pass = st2
-
-
-
-
-
-
-
--- sAnd st1 st2 = NextT $ f st1 st2
---   where
---     f Fail _ _ = Fail
---     f _ Fail _ = Fail
---     f Pass Pass _ = Pass
---     f Pass (NextT t1) x = sAnd Pass (t1 x) 
---     f (NextT t1) Pass x = sAnd Pass (t1 x)
---     f (NextT t1) (NextT t2) x = sAnd (t1 x) (t2 x) 
-
--- sAnd :: Stamate a -> Stamate a -> Stamate a
--- sAnd Pass Pass = Pass
--- sAnd _ Fail = Fail
--- sAnd Fail _ = Fail
--- sAnd (NextT t1) Pass = NextT $ \x -> sAnd (t1 x) Pass
--- sAnd Pass (NextT t2) = NextT $ \x -> sAnd Pass (t2 x)
--- sAnd (NextT t1) (NextT t2) = NextT $ \x -> sAnd (t1 x) (t2 x)
-
-    -- where 
-        -- f:: Stamate a -> Stamate a -> a -> Stamate a
-        -- f = 
-        -- f Pass (NextT testerF)  x = testerF x
-        -- f (NextT testerF) Pass  x = testerF x
-        -- f (NextT testerF1) (NextT testerF2) = f (testerF1 x) (testerF2 x) 

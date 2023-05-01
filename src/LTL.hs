@@ -4,7 +4,7 @@ module LTL where
 import Rattus.Stream hiding (filter, const)
 import Rattus
 import Helpers
-
+import Types
 
 tautology :: TPred a
 tautology = SP (const True)
@@ -13,17 +13,6 @@ contradiction :: TPred a
 contradiction = SP (const False)
 
 
-data TPred a where
-    SP          ::  (a -> Bool) -> TPred a
-    Not         :: TPred a -> TPred a
-    Or          :: TPred a -> TPred a -> TPred a
-    Until       :: TPred a -> TPred a -> TPred a
-    Imminently  :: TPred a -> TPred a
-    And         :: TPred a -> TPred a -> TPred a
-    Implies     :: TPred a -> TPred a -> TPred a
-    Always      :: TPred a -> TPred a
-    Eventually  :: TPred a -> TPred a
-    After       :: Int -> TPred a -> TPred a
 
 evalLTL :: TPred a -> Str a -> Bool
 evalLTL = evalLTL' 20 

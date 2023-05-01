@@ -12,6 +12,8 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
+import Types
+
 
 hasHead :: (Eq p) => p -> TPred p
 hasHead expectedHead = SP (==expectedHead)

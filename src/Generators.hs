@@ -13,11 +13,10 @@ import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
 import LTL
+import Types
 
 
 -- Foundations -------------------------------------------------------------
-newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
-
 stamageRun :: Stamage a -> Gen (Str a) -- perhaps a maybe here?
 stamageRun (NextG aGen) = do
     aMaybe <- aGen
@@ -31,8 +30,6 @@ stamageRun (NextG aGen) = do
 instance (Arbitrary a) => Arbitrary (Str a) where
     arbitrary = stamageRun arbitraryStamage
 
-instance Show a => Show (Stamage a) where
-  show (NextG _) = " a NextG " 
 
 emptyStamage :: Stamage a
 emptyStamage = NextG (return Nothing)
