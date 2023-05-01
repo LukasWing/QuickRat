@@ -13,6 +13,7 @@ import Rattus.Stream
 import Rattus
 import LTL
 import Types
+import Functions
 
 
 hasHead :: (Eq p) => p -> TPred p
