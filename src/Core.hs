@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
-module Functions where 
+module Core where 
 import Rattus.Stream (Str(..))
 import Rattus.Primitives (delay, adv)
 import Test.QuickCheck (Gen, arbitrary, Arbitrary, resize)
