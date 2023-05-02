@@ -30,7 +30,6 @@ library
       Generators
       Helpers
       LTL
-      Types
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:

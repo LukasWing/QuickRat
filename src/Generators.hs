@@ -13,7 +13,6 @@ import Data.Bits ( Bits((.&.), (.|.)) )
 import Control.Monad.State
 import qualified Data.Set as Set
 import LTL
-import Types
 import Functions
 
 -- Foundations -------------------------------------------------------------

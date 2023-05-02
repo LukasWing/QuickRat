@@ -17,7 +17,6 @@ import Test.QuickCheck.Monadic ()
 import Data.Maybe (isNothing)
 import LTL
 import Control.Monad (liftM2, liftM4)
-import Types
 import Functions
 
 prop_seesConst :: Int -> Bool
