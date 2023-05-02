@@ -4,7 +4,7 @@ module LTL where
 import Rattus.Stream hiding (filter, const)
 import Rattus
 import Helpers
-import Functions
+import Core
 
 tautology :: TPred a
 tautology = SP (const True)

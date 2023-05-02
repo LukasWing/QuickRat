@@ -12,7 +12,7 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
-import Functions
+import Core
 
 
 hasHead :: (Eq p) => p -> TPred p

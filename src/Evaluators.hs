@@ -9,7 +9,7 @@ import qualified Data.Set as Set
 import LTL
 import Control.Monad
 import Debug.Trace (trace)
-import Functions
+import Core
 -- Foundations ----------------------------------------------------------------
 
 -- State Machines -------------------------------------------------------------
