@@ -12,7 +12,6 @@ import Test.QuickCheck
 import Rattus.Stream
 import Rattus
 import LTL
-import Types
 import Functions
 
 

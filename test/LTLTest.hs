@@ -11,9 +11,7 @@ import Rattus
 import qualified Data.Set as Set
 import Evaluators
 import LTL
-import Types
-
-
+import Functions
 
 -- evalLTL tests ----------------------------------------------------------
 prop_SPConstTrue :: Bool
