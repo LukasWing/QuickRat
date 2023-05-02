@@ -1,4 +1,3 @@
-
 {-# LANGUAGE ScopedTypeVariables #-}
 module Functions where 
 import Types (Stamage(..), Stamate(..), TPred(..)) 
@@ -95,4 +94,3 @@ suchThatT (NextG gen) (NextT passTest) =
                         Fail -> if n == 0 then return Nothing else loop (n-1)
                         aStamate -> return $ Just (genVal, suchThatT nextGen aStamate)
     in NextG $ loop (nTries::Int)
-

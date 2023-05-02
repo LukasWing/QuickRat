@@ -31,4 +31,3 @@ newtype Stamage a = NextG (Gen (Maybe (a, Stamage a)))
 
 instance Show a => Show (Stamage a) where
   show _ = "a Stamage" 
-
