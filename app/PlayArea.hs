@@ -8,7 +8,7 @@ import Control.Monad.Writer
     ( MonadWriter(writer), runWriter, Writer )
 import Generators
 import Data.Char
-import Examples
+-- import Examples
 import System.Random
 import Control.Monad.State
 import Rattus.Primitives
@@ -151,10 +151,17 @@ prop_stackPushedIsPopped' anInt =
     let (expectedInt, _) = runState (stackManip anInt) []
     in expectedInt == anInt
 
-data Z = Z {a::Float, b::Float}
-genComplex = arbitrary >>= (\a ->
+genComplex'' = arbitrary >>= (\a ->
              arbitrary >>= (\b ->
              return Z {a=a, b=b}))
+data Z = Z {a :: Float, b :: Float}
+
+genComplex = arbitrary >>= (\a -> arbitrary >>= (\b -> return Z {a = a, b = b}))
+
+genComplex' = do
+  a <- arbitrary
+  b <- arbitrary
+  return Z {a = a, b = b}
 
 
 mapL :: Box (a -> b) -> O a -> O b
