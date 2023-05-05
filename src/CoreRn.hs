@@ -1,10 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE GADTs #-}
-module CoreRn where 
+{-# OPTIONS_GHC -Wno-orphans #-}
+module CoreRn where
 import Rattus.Stream (Str(..))
 import Rattus.Primitives (delay, adv)
-import Test.QuickCheck (Gen, arbitrary, Arbitrary, resize)
+import Test.QuickCheck (Gen, arbitrary, Arbitrary, resize, forAll)
 import Data.Maybe (fromJust)
+import Test.QuickCheck.Property (Property)
+
+
 
 --- Types ----------------------------------------------------------------------------
 data TPred a where
@@ -25,19 +29,19 @@ data Acceptor a = Accept
 
 instance Show (Acceptor a) where
     show Accept     = "P"
-    show Reject     = "F" 
+    show Reject     = "F"
     show (NextA _)  = "N"
 
 newtype Transducer a = NextT (Gen (Maybe (a, Transducer a)))
 
 instance Show a => Show (Transducer a) where
-  show _ = "a Transducer" 
+  show _ = "a Transducer"
 
 --- Runners -----------------------------------------------------------------------
-trans :: Transducer a -> Gen (Str a) 
+trans :: Transducer a -> Gen (Str a)
 trans (NextT aGen) = do
     aMaybe <- aGen
-    let (value, aTransducer) = fromJust aMaybe 
+    let (value, aTransducer) = fromJust aMaybe
     rest <- trans aTransducer
     return $ value ::: delay rest
 
@@ -48,12 +52,12 @@ accept' :: Str a -> Acceptor a -> Int ->  Bool
 accept' _ Accept _ = True
 accept' _ Reject _ = False
 accept' (h ::: t) (NextA makeNext) checksLeft =
-    checksLeft == 0 
+    checksLeft == 0
     || case makeNext h of
             Accept -> True
             Reject -> False
             continuation -> accept' (adv t) continuation (checksLeft - 1)
-        
+
 
 --- Makers --------------------------------------------------------------------------
 rejectTransducer :: Transducer a
@@ -72,7 +76,7 @@ mkAcceptor formulae =
     case formulae of
             Atom headPred   -> NextA (\h -> if headPred h then Accept else Reject)
             Not phi         -> negateA $ mkAcceptor phi
-            Or phi psi      -> mkAcceptor (Not (Not phi `And` Not psi)) 
+            Or phi psi      -> mkAcceptor (Not (Not phi `And` Not psi))
             And phi psi     -> mkAcceptor phi `andA` mkAcceptor psi
             Implies phi psi -> mkAcceptor (Not phi `Or` psi)
             Imminently phi  -> NextA (\_ -> mkAcceptor phi)
@@ -89,7 +93,6 @@ negateA Reject = Accept
 negateA Accept = Reject
 negateA (NextA f) =  NextA (negateA . f)
 
-
 andA :: Acceptor a -> Acceptor a -> Acceptor a
 andA (NextA f1) (NextA f2) =
     NextA $ \x1 ->
@@ -98,10 +101,8 @@ andA (NextA f1) (NextA f2) =
             Accept -> NextA f2
             Reject -> Reject
             NextA f1Inner -> NextA f1Inner `andA` f2 x1
-
 andA Reject _ = Reject
 andA _ Reject = Reject
-andA Accept Accept = Accept
 andA Accept st1 = st1
 andA st2 Accept = st2
 
@@ -122,3 +123,34 @@ restrictWith (NextT gen) (NextA passTest) =
                         Reject -> if n == 0 then return Nothing else loop (n-1)
                         anAcceptor -> return $ Just (genVal, restrictWith nextGen anAcceptor)
     in NextT $ loop (nTries::Int)
+
+
+instance (Show a) => Show (Str a) where
+    show aStr =  "Str: " ++ (show . strTake 20) aStr
+
+strTake :: Integer -> Str a -> [a]
+strTake n aStr =
+    let strTake' picksLeft accumulator (h:::t) =
+            if picksLeft > 0
+                then strTake' (picksLeft - 1) (h:accumulator) (adv t)
+                else reverse accumulator
+    in strTake' n [] aStr
+
+ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -> Property
+ltlProperty f inPred outPred = 
+    forAll 
+        (trans $ (mkTransducer . mkAcceptor) inPred)
+        $ \aStr -> accept (f aStr) (mkAcceptor outPred)
+
+    
+f :: Str Int -> Str Bool
+f aStr = error "NI"
+
+prop_f_pBelow10_vAlwaysOff :: Property
+prop_f_pBelow10_vAlwaysOff =
+    ltlProperty f (Always (Atom (<10))) (Always (Atom not))
+
+-- satisfies :: TPred a -> Str a -> Bool
+-- mkStrGen :: TPred a -> Gen (Str a)
+
+
