@@ -48,6 +48,17 @@ A Stamate for q would be
 %                                           = Pass else Fail
         
 \subsubsection{Syntax}
+
+This syntax is modelled by genaralised algebraic data type as:
+\begin{hscode}
+type StrPred a = Str a -> Bool
+data TPred a where
+    SP          :: StrPred a -> TPred a
+    Not         :: TPred a -> TPred a
+    Or          :: TPred a -> TPred a -> TPred a
+    Until       :: TPred a -> TPred a -> TPred a
+    Imminently  :: TPred a -> TPred a
+\end{hscode}
 \subsubsection{Implementation}
 
 

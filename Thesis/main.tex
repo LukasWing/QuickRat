@@ -28,7 +28,19 @@
 \theoremstyle{definition}
 \newtheorem{definition}{Definition}
 \usepackage[acronym]{glossaries}
-\include{glossary}
+
+\makeglossaries
+\newacronym{frp}{FRP}{Functional reactive programming}
+\newacronym{pbt}{PBT}{Property Based Testing}
+\newacronym{dsl}{DSL}{Domain Specific Language}
+\newacronym{ltl}{LTL}{Linear Temporal Logic}
+
+% usage: 
+% Given a set of numbers, there are elementary methods to compute 
+% its \acrlong{gcd}, which is abbreviated \acrshort{gcd}. This 
+% process is similar to that used for the \acrfull{lcm}.
+% \Gls{formula}
+
 
 \NewDocumentEnvironment{enumdescript}{O{}}{%
     \setcounter{descriptcount}{0}%
@@ -75,7 +87,7 @@
 \include{Sections/discussion}
 \newpage
 \printglossary[type=\acronymtype]
-\printglossary
+% \printglossary
 \newpage
 \printbibliography
 \thispagestyle{empty}

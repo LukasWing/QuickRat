@@ -24,6 +24,8 @@ For future values the concern is, that we do not know the measurement in the fut
 \begin{figure}
     \centering
     \begin{hscode}
+        -- Type definition of Signal Function
+        data SF a b = SF (DTime -> a -> (b, SF a b)) 
         -- Type definition of the Monadic Stream Function
         newtype MSF m a b
         -- Function to get a value of type b. 
@@ -34,54 +36,44 @@ For future values the concern is, that we do not know the measurement in the fut
 \end{figure}
 To be fair, because Monadics Stream Function are instances of Arrow, their exists combinators and special notation\parencite{paterson}, that alleviates this problem, but there will be complexity under the hood, that enevitable will show up in development. 
 
-\par A way to deal with this complexity, is to reallow the developer to work with signals directly, but mitigating prior concerns by the use of a modal type operator, and type system that enforces correct use of such, for an example consider listing \ref{lst:modalExample}
+\par A way to deal with this complexity, is to reallow the developer to work with signals directly, while mitigating prior concerns by the use of a modal type operator \verb|O|, and a type system that enforces the correct use of such, for an example consider the naive and protected implementation and use of a discrete signal function in listing, which can produces a polymorphic value denoted by the type variable \verb|a|.\ref{lst:modalExample}
 \begin{figure}
     \centering
     \begin{hscode}
-      ..
+      -- definition
+      data Str a = a ::: Str a
+      currentVal (h ::: _) = h
+      -- should be impossible for real-time systems.
+      futureVal (h ::: strTail) = currentVal strTail  
+      
+      -- Rattus' definition
+      data Str a = a ::: O (Str a)
+      currentVal (h ::: _) = h
+      -- Raise a type error in Haskell
+      futureVal (h ::: delayedStrTail) = currentVal delayedStrTail  
+      -- Compiles in Haskell but raises a type error in Rattus.
+      futureVal' (h ::: delayedStrTail) = currentVal (adv delayedStrTail)  
+      
     \end{hscode}
     \caption{Example displaying usage og the modal type operator.}
     \label{lst:modalExample}
 \end{figure}
-
-
-
-
-Because an arrow is a generalisation of a Monad, a brief introduction of a Monad might be in place.
-\subsubsection{Monads and Arrows}
-Monad is a typeclass defined as
+The \verb|futureVal| type error can mitigated since the exists a function \verb|adv :: O a -> a| which will convert the delayed stream to regular stream, but the compiler from Rattus, restricting the use adv. The general principle of these restrictions\parencite{KrishanType} is one of causality and is quite simple: It is allowed to use a delayed value, only in expressions whose value will be computed in a later time step.
+\verb|futureVal'| fails to follow this principle, because it tries to acquire a value in a later time step now. 
+\par Unfortunately the principle raises a question, how do we then tell the Rattus compiler that an expression is to be computed in the next time step? The answer is the semantic inverse of \verb|adv| and has the according type \verb|delay :: a -> O a|, to appreciate how they work together consider the following function, which maps every element of the input to the output stream using with f.
 \begin{hscode}
-    class Applicative m => Monad m where
-        return :: a -> m a
-        (>>=) :: m a -> (a -> m b) -> m b 
-        -- methods excluded for brevity
+    map :: Box (a -> b) -> Str a -> Str b 
+    map f (h ::: t) = unbox f h ::: delay (map f (adv t)) 
 \end{hscode}
-Monad models types that has both a context \verb|m|, which is \verb|Applicative|, and a polymorphic value. There are two core methods of our concern. 
-\verb|return| takes a value and wraps it in a minimum context. For example Gen is a Monad, and so return \verb|a| is just a generator for values of type \verb|a|.
-\verb|(>>=)| is also called bind. Bind returns the result of applying the second argument to the value first monad. 
-A practical way to use Monads in Haskell is with the do-notation, which is syntactic sugar for bind-expressions nested in others. You can appreciate the do-notation how to implement you need a generator for values of your own complex number type. Such an implementation is done in listing \ref{lst:genComplex} using both \verb|return| and \verb|>>=|, and the do-notation.
-\begin{figure}
-    \begin{hscode}
-    data Z = Z {a::Float, b::Float}
-    genComplex = arbitrary >>= (\a -> arbitrary >>= (\b -> return Z {a=a, b=b}))
-    genComplex' = do 
-        a <- arbitrary
-        b <- arbitrary
-        return \$ Z {a=a, b=b}
-    \end{hscode} 
-    \caption{Constructing a custom Gen monad with and without do-notation.}
-    \label{lst:genComplex}
-\end{figure}
+Here \verb|adv| is used inside the expression whose value will be passed on to \verb|delay|, and thereby the causality principle. \verb|map| also uses another the box modality, which marks the inner function as one that safe to use inside delay, because of its time-independency. 
+In practice the Rattus compiler is active on functions or modules using Haskell's compiler directives.
+There are more things to the type system of Rattus, one which is how it prevents space-leaks, but going into details of such is beyond the scope of this project. Actually we will deliberately not activate the Rattus compiler, because we generate streams for testing rather receiving them in real-time. 
 
-\begin{hscode}
-    data SF a b = SF (DTime  -> a -> (b, SF a b)) 
-\end{hscode}
-Being that DTime is always positive this construct prevents from  getting past values, and thus the program does not need to store those.
-a describes what to sample and b describes the output.
 
-\subsection{Property Based Testing}
 
-If you see the semantics of a functions as something that takes an input, and then returns an output, then your natural way to test it would be to define an input, and somehow check, that the output is what you expected. That the approach taken in unit testing.
+
+\subsection{\acrlong{pbt}}
+\par If you see the semantics of a functions as something that takes an input, and then returns an output, then your natural way to test it would be to define an input, and somehow check, that the output is what you expected. That the approach taken in unit testing.
 A different approach comes, when you look deeper into what the function actually models, and through that lens think about what properties that should for the output.
 
 Take for example the measurement truck, for function \verb|fDist| that returns a distance from a laser to the road, we expect that the output is never negative, or larger than the height of the truck. We would expect that a function \verb|fAvg| making an average of two GPS's will always return a point between those.
@@ -102,16 +94,13 @@ If you were to make unittests you would probably check that all the following va
     \label{lst:unitTests}
 \end{figure}
 This leads to large amount of time spent producing arbitrary test cases. In some cases the actual test cases might be good and covering, however this is rarely the case for blackbox-testing, and eitherway there will inevitably be noise in the quality such unit tests.
-
 Properties are also closely related to models of problem domain. For instance the property stated in the example, resembles a verbal description of an average much better than all the test cases, despite that fact tests in general is already considered to increase comprehensibility of codebases.
 
-\subsubsection{Using custom generators}
-Properties abstract the actual input given to the function, but to test a property we still input for our functions, therefore Random value generators are a core part of \acrshort{pbt}. When asserting a property the ideal would be to check that the property holds for all combinations of inputs, libraries such as SmallCheck does this. However this is only feasible when the size of the function-domain is very small. As the number of input cases is $O(2^n)$ where $n$ is the input size in bits. 
-
-So instead of generating values covering the entire function-domain, the goal is to use random generator values that pick from a distribution, such that most if not all possible execution paths are hit. Knowing exactly which distribution to pick from is a science in itself, however you can go a long way by treating each input as isolated, and let the generator only depend on the type. 
+\par When asserting a property the ideal would be to check that the property holds for all combinations of inputs, libraries such as SmallCheck does this. However this is only feasible when the size of the function-domain is very small. As the number of input cases is $O(2^n)$ where $n$ is the input size in bits. 
+So instead of generating values covering the entire function-domain, the goal is to use random generator that picks values from a distribution, such that all possible execution paths are hit. Knowing exactly which distribution to pick from is a science in itself, however you can go a long way by treating each input as isolated, and let the generator only depend on the type. Consider a for example a function that returns a number that is 10 larger the highest of its 3 arguments, a simple property based approach is to generate 3 random numbers for inputs and test the property that these inputs are always lower than the all of the arguments.
 
 \subsubsection{QuickCheck}
-Having defined what properties are, we need a tool for testing them. Many programming languages, has one or more tools for performing property based testing, examples are FastCheck for JavaScript, FsCheck for F\# and JUnit-QuickCheck for Java, they differ in implementation. But they are all inspired QuickCheck\parencite{quickCheck}. Since QuickCheck is written and applicable for Haskell, it can take advantage of its typing system and pureness.
+Having defined what properties are and a strategy for asserting them we need an actual implementation for testing them. Many programming languages has one or more tools for performing \acrshort{pbt}, examples are FastCheck for JavaScript, FsCheck for F\# and JUnit-QuickCheck for Java, they differ in implementation. But they are all inspired from the grandfather of \acrshort{pbt} QuickCheck\parencite{quickCheck}. Since QuickCheck is written and applicable for Haskell, it can take advantage of its typing system and pureness.
 The pureness is a guarantee that the output of a function only depends on the input, this increases the reliability of the tests. The typing system for Haskell will come in handy generating test cases, to appreciate this consider the following compiling code given that isBetween is defined.
 \begin{hscode}
     fAvg (x1, y1) (x2, y2) = ((x1 + x2) / 2, (y1 + y2) / 2)
@@ -132,7 +121,31 @@ So here the property is expressed as the lambda passed on to quickCheck. The typ
 \end{figure}
 A property in QuickCheck is implemented as the type \verb|Property| which at its simplest, is just a definition of type bool, all of expressions in \ref{lst:unitTests} could be used as this type of Properties. The data for the 100 inputs were generated based the parameter types for \verb|prop_pointsAreBetween|. The default behavior is that values are generated using the \verb|arbitrary :: Gen a| function. Generating random values within a Haskell function would break its pureness. QuickChecks solves this problem by making \verb|Gen| an instance of \verb|Monad|.
 
-\paragraph{The Gen Monad}
+\subsubsection{Gen Monad}
+Since Gen is a Monad, along with many other types it is worthwhile to step back and go through what a Monad is. Monad is a typeclass defined as
+\begin{hscode}
+    class Applicative m => Monad m where
+        return :: a -> m a
+        (>>=) :: m a -> (a -> m b) -> m b 
+        -- methods excluded for brevity
+\end{hscode}
+Monad models types that has both a context \verb|m|, which is \verb|Applicative|, and a polymorphic value. There are two core methods of our concern. 
+\verb|return| takes a value and wraps it in a minimum context. In the case of Gen return \verb|a| is just a generator for values of type \verb|a|.
+\verb|(>>=)| is also called bind. Bind returns the result of applying the second argument to the value first monad. Note that while the typeclass definition defines and interface, the implementation of, return, bind and methods from Applicative is left for the programmer. There also exists Monad laws such as associativity, but these are not checked by the compiler. 
+A practical way to use Monads in Haskell is with the do-notation, which is syntactic sugar for bind-expressions nested in others. You can appreciate the do-notation by considering how you would implement a generator for complex numbers \verb|Z|. Such an implementation is done in listing \ref{lst:genComplex} using both \verb|return| and \verb|>>=|, and the do-notation.
+\begin{figure}
+    \begin{hscode}
+    data Z = Z {a::Float, b::Float}
+    genComplex = arbitrary >>= (\a -> arbitrary >>= (\b -> return Z {a=a, b=b}))
+    genComplex' = do 
+        a <- arbitrary
+        b <- arbitrary
+        return Z {a=a, b=b}
+    \end{hscode} 
+    \caption{Constructing a custom Gen monad with and without do-notation.}
+    \label{lst:genComplex}
+\end{figure}
+
 I have already given example of how to make \verb|Gen Z|. Here I will elaborate a bit more on why that works, and how it can indeed generate random inputs in a pure functional programming language.
 Consider the following hypothetical impure haskell function.
 \begin{hscode}
@@ -141,12 +154,18 @@ Consider the following hypothetical impure haskell function.
          randomInt 1 nSides
 \end{hscode}
 This function would return different results for identical inputs, which, is not pure. But suppose that \verb|rollDice| was called from \verb|main|, where IO is handled, if needed we could just get a list of randombits from IO and make randomInt that read from it.
-\begin{hscode}
+\begin{figure}
+    \centering
+    \begin{hscode}
     rollDice ::(Int, [Bool]) -> Int
     rollDice (nSides, randombits) = 
          randomInt randombits 1 nSides
-\end{hscode}
-But the implementation in listing \ref{lst:randombitsFix} would only produce identical random numbers, such as 1,1,1,1 and so forth if called multiple times. To solve the issue we need to return from randomInt, information on which part randombits is already used, perhaps by returning a tuple \verb|(aRandomInt, unusedBitList)|. The type signature gets rather messy, we can prevent the by instead of returning the actual value could just produce a generator for the sought value, which could then be called where a random generator is actually available and its sequence of random values can advanced. Listing \ref{GenDef} shows the relevant types for doing just that. 
+    \end{hscode}
+    \caption{Fixing with random bits}
+    \label{lst:randombitsFix}
+\end{figure}
+
+But the implementation in listing \ref{lst:randombitsFix} would only produce identical random numbers, such as 1,1,1,1 and so forth if called multiple times. To solve the issue we need to return from randomInt, information on which part randombits is already used, perhaps by returning a tuple \verb|(aRandomInt, unusedBitList)|. The type signature gets rather messy, we can prevent the by instead of returning the actual value could just produce a generator for the sought value, which could then be called where a random generator is actually available and its sequence of random values can advanced. Listing \ref{lst:GenDef} shows the relevant types for doing just that. 
 \begin{figure}
     \centering
     \begin{hscode}
@@ -169,7 +188,7 @@ But the implementation in listing \ref{lst:randombitsFix} would only produce ide
     \label{lst:GenDef}
 \end{figure}
 In other words return values with a context, and we do not to reinvent wheel, because Monads does exactly that, and the Gen Monad returned by \verb|arbitrary| is an example of one.
-In practice we do not need to call \verb|generate| explicitly, this done by the \verb|quickCheck| which uses a supplied generator for the type, that matches input to the property that should hold. If have to use a custom generator like in \ref{lst:GenDef} or \ref{lst:genComplex}, you need to pass in the your generator as first paramaeter to \verb|forAll| function.
+In practice we do not need to call \verb|generate| explicitly, this done by the \verb|quickCheck| which uses a supplied generator for the type, that matches input to the property that should hold. If have to use a custom generator like in \ref{lst:GenDef} or \ref{lst:genComplex}, you need to pass in the your generator as first parameter to \verb|forAll| function.
 \begin{hscode}
     forAll :: (Testable prop) => Gen a -> (a -> prop) -> Property
     prop_winner_diceRoll12_alwaysHouse = 
@@ -237,15 +256,3 @@ With these semantics in place we can start to model stream properties properties
     \item The output will eventually reach some value $a$
     \item The output will always be an odd number
 \end{itemize}
-
-
-This syntax is modelled by genaralised algebraic data type as:
-\begin{hscode}
-type StrPred a = Str a -> Bool
-data TPred a where
-    SP          :: StrPred a -> TPred a
-    Not         :: TPred a -> TPred a
-    Or          :: TPred a -> TPred a -> TPred a
-    Until       :: TPred a -> TPred a -> TPred a
-    Imminently  :: TPred a -> TPred a
-\end{hscode}
