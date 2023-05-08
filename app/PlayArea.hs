@@ -8,7 +8,6 @@ import Control.Monad.Writer
     ( MonadWriter(writer), runWriter, Writer )
 import Generators
 import Data.Char
--- import Examples
 import System.Random
 import Control.Monad.State
 import Rattus.Primitives

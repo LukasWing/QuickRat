@@ -26,11 +26,10 @@ source-repository head
 library
   exposed-modules:
       Evaluators
-      Examples
       Generators
       Helpers
       LTL
-      TypeFromMeeting
+      Types
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:
@@ -70,7 +69,6 @@ test-suite HaskellSandbox-test
   main-is: Spec.hs
   other-modules:
       EvaluatorTest
-      ExamplesTest
       GeneratorTest
       HelpersTest
       LTLTest

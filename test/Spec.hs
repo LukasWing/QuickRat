@@ -3,7 +3,6 @@
 import GeneratorTest as GT
 import HelpersTest as HT
 import EvaluatorTest as ET
-import ExamplesTest as EXT
 import System.Exit 
 import Test.QuickCheck
 import Test.QuickCheck.Test 
@@ -14,11 +13,10 @@ import qualified LTLTest as LT
 main :: IO ()
 main = do
     let testRunners =   [return True
-                        -- , GT.runTests
-                        -- , HT.runTests
+                        , GT.runTests
+                        , HT.runTests
                         , ET.runTests
-                        -- , LT.runTests
-                        -- , EXT.runTests
+                        , LT.runTests
                         ]
     good <- and <$> sequence testRunners
     if good
