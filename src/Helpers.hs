@@ -6,11 +6,11 @@ import Rattus.Stream as RS
 import Rattus
 import qualified Rattus.Stream as Stream
 
-class AlmostEq a where
-    (=~=) :: a -> a -> Bool
 
 instance (Show a) => Show (Str a) where
     show aStr =  "Str: " ++ (show . strTake 20) aStr
+class AlmostEq a where
+    (=~=) :: a -> a -> Bool
 
 instance (Eq a) => AlmostEq (Str a) where
     stream1 =~= stream2 = strTake 5 stream1 == strTake 5 stream2

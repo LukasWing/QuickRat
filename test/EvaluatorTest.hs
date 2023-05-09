@@ -155,6 +155,7 @@ prop_mkStamate_afterNAlwaysOdd (Positive {getPositive=pN}) =
                     Not (After (n-1) (SP odd)))
 
 -- prop_mkStamate_afterNAlwaysOdd' :: Positive Int -> Bool
+prop_mkStamate_afterNAlwaysOdd' :: Bool
 prop_mkStamate_afterNAlwaysOdd'  =
     stamateRun
         (strExtend [2, 1])

@@ -4,13 +4,14 @@
 module CoreRn where
 import Rattus.Stream (Str(..))
 import Rattus.Primitives (delay, adv)
-import Test.QuickCheck (Gen, arbitrary, Arbitrary, resize, forAll)
+import Test.QuickCheck (Gen, arbitrary, Arbitrary (..), resize, forAll, scale)
 import Data.Maybe (fromJust)
 import Test.QuickCheck.Property (Property)
+import Test.QuickCheck (getSize)
 
 --- Types ----------------------------------------------------------------------------
 data TPred a where
-    Tautology       :: TPred a 
+    Tautology       :: TPred a
     Contradiction   :: TPred a
     Atom            :: (a -> Bool) -> TPred a
     Not             :: TPred a -> TPred a
@@ -34,17 +35,29 @@ instance Show (Acceptor a) where
 
 newtype Transducer a = NextT (Gen (Maybe (a, Transducer a)))
 
+instance (Arbitrary a) => Arbitrary (Transducer a) where
+    arbitrary = return arbitraryTransducer
+
+    shrink (NextT aGen) = [
+        NextT $ scale (`div` expos2 n) aGen |  n <- [1..10]]
+        where
+            expos2 :: Int -> Int
+            expos2 n = round $ sqrt (2::Float) ** fromIntegral n
+
 instance Show a => Show (Transducer a) where
     show _ = "a Transducer"
 
 instance (Show a) => Show (Str a) where
     show aStr =  "Str: " ++ (show . strTake (20::Int)) aStr ++ " ..."
-        where 
+        where
         strTake n = strTake' n []
         strTake' picksLeft accumulator (h:::t) =
             if picksLeft > 0
                 then strTake' (picksLeft - 1) (h:accumulator) (adv t)
                 else reverse accumulator
+
+instance (Arbitrary a)  => Arbitrary (Str a) where
+    arbitrary = trans arbitraryTransducer
 
 --- Runners -----------------------------------------------------------------------
 trans :: Transducer a -> Gen (Str a)
@@ -55,17 +68,22 @@ trans (NextT aGen) = do
     return $ value ::: delay rest
 
 accept :: Str a -> Acceptor a -> Bool
-accept aStr anAcceptor  = accept' aStr anAcceptor 20
+accept aStr anAcceptor  = evalAcceptor $ accept' aStr anAcceptor 20
 
-accept' :: Str a -> Acceptor a -> Int ->  Bool
-accept' _ Accept _ = True
-accept' _ Reject _ = False
+accept' :: Str a -> Acceptor a -> Int -> Acceptor a
 accept' (h ::: t) (NextA makeNext) checksLeft =
-    checksLeft == 0
-    || case makeNext h of
-            Accept -> True
-            Reject -> False
+    if checksLeft == 0
+        then NextA makeNext
+        else case makeNext h of
+            Accept -> Accept
+            Reject -> Reject
             continuation -> accept' (adv t) continuation (checksLeft - 1)
+accept'  _ finished _ = finished
+
+evalAcceptor :: Acceptor a -> Bool
+evalAcceptor Accept = True
+evalAcceptor Reject = False
+evalAcceptor (NextA _) = True
 
 
 --- Makers --------------------------------------------------------------------------
@@ -77,14 +95,17 @@ arbitraryTransducer = NextT $ do
     element <- (arbitrary :: Gen a)
     return (Just (element, arbitraryTransducer))
 
-mkTransducer :: (Arbitrary a) => Acceptor a -> Transducer a
-mkTransducer anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
+moldTransducer :: (Arbitrary a) => Acceptor a -> Transducer a
+moldTransducer anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
+
+mkTransducer :: (Arbitrary a) => TPred a -> Transducer a 
+mkTransducer = moldTransducer . mkAcceptor
 
 mkAcceptor :: TPred a -> Acceptor a
 mkAcceptor formulae =
     case formulae of
         Tautology       -> Accept
-        Contradiction   -> Reject 
+        Contradiction   -> Reject
         Atom headPred   -> NextA (\h -> if headPred h then Accept else Reject)
         Not phi         -> negateA $ mkAcceptor phi
         Or phi psi      -> mkAcceptor (Not (Not phi `And` Not psi))
@@ -99,6 +120,7 @@ mkAcceptor formulae =
                                         else Imminently (After (anInt - 1) phi)
 
 --- Modifiers ------------------------------------------------------------------------
+
 negateA :: Acceptor a -> Acceptor a
 negateA Reject = Accept
 negateA Accept = Reject
@@ -122,9 +144,9 @@ restrictWith _ Reject = rejectTransducer
 restrictWith aTransducer Accept = aTransducer
 restrictWith (NextT gen) (NextA passTest) =
     let nTries = 1000
-        sizeSuggest = 10
         loop n = do
-            value <- resize sizeSuggest gen
+            sz <- getSize
+            value <- if  sz < 2 then scale (+2) gen else gen
             case value of
                 Nothing -> return Nothing
                 Just (genVal, nextGen) ->
@@ -138,26 +160,59 @@ restrictWith (NextT gen) (NextA passTest) =
 
 --- Utilities -----------------------------------------------------------------------------
 ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -> Property
-ltlProperty fUnderTest inPred outPred = 
-    forAll 
-        (trans $ (mkTransducer . mkAcceptor) inPred)
+ltlProperty fUnderTest inPred outPred =
+    forAll
+        (trans $ (moldTransducer . mkAcceptor) inPred)
         $ \aStr -> accept (fUnderTest aStr) (mkAcceptor outPred)
 
-    
+
 f :: Str Int -> Str Bool
 f aStr = error "NI"
+
+prop_f_pBelow10_vAlwaysOff :: Property
+prop_f_pBelow10_vAlwaysOff =
+    ltlProperty f (Always (Atom (<10))) (Always (Atom not))
+
+constTransducer :: a -> Transducer a
+constTransducer value = NextT $ return (Just (value, constTransducer value))
+
+transducerOfStr :: Str a -> Transducer a
+transducerOfStr (h ::: t) = NextT $ return $ Just (h, transducerOfStr (adv t))
 
 constStr :: a -> Str a
 constStr v = v ::: delay (constStr v)
 
 strExtend :: [a] -> Str a
 strExtend [h] = constStr h
-strExtend (h:t) = h ::: delay (strExtend t) 
+strExtend (h:t) = h ::: delay (strExtend t)
 strExtend [] = error "No value in list"
 
-prop_f_pBelow10_vAlwaysOff :: Property
-prop_f_pBelow10_vAlwaysOff =
-    ltlProperty f (Always (Atom (<10))) (Always (Atom not))
+
+evalLTL :: TPred a -> Str a -> Bool
+evalLTL = evalLTL' 20 
+
+evalLTL' :: Int -> TPred a -> Str a -> Bool
+evalLTL' checksLeft formulae aStr@(h ::: t) =
+    checksLeft <= 0 || case formulae of
+        Tautology       -> True
+        Contradiction   -> False
+        Atom pred       -> pred h
+        Not aTPred      -> not $ eval aTPred aStr
+        Or phi psi      -> eval phi aStr || eval psi aStr
+        And phi psi     -> eval phi aStr && eval psi aStr
+        Implies phi psi -> eval (Not phi `Or` psi) aStr
+        Imminently phi  -> evalNext phi strTail
+        Eventually phi  -> eval phi aStr || evalNext (Eventually phi) strTail
+        Until phi psi   -> eval psi aStr || (eval phi aStr && evalNext (phi `Until` psi) strTail)
+        Always phi      -> eval phi aStr && evalNext (Always phi) strTail
+        After anInt phi -> if anInt == 0
+                            then eval phi aStr
+                            else evalNext (After (anInt - 1) phi) strTail
+    
+    where   evalNext = evalLTL' (checksLeft - 1)
+            eval = evalLTL' checksLeft
+            strTail = adv t
+
 
 
 
