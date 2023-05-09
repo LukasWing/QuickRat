@@ -4,10 +4,10 @@
 module Core where
 import Rattus.Stream (Str(..))
 import Rattus.Primitives (delay, adv)
-import Test.QuickCheck (Gen, arbitrary, Arbitrary (..), resize, forAll, scale)
+import Test.QuickCheck
+    ( Gen, arbitrary, Arbitrary(..), forAll, scale, getSize )
 import Data.Maybe (fromJust)
 import Test.QuickCheck.Property (Property)
-import Test.QuickCheck (getSize)
 
 --- Types ----------------------------------------------------------------------------
 data TPred a where
@@ -85,6 +85,9 @@ evalAcceptor Accept = True
 evalAcceptor Reject = False
 evalAcceptor (NextA _) = True
 
+check :: (a -> Bool) -> (a -> Acceptor a)
+check predicate x = if predicate x then Accept else Reject
+
 
 --- Makers --------------------------------------------------------------------------
 rejectTransducer :: Transducer a
@@ -98,7 +101,7 @@ arbitraryTransducer = NextT $ do
 moldTransducer :: (Arbitrary a) => Acceptor a -> Transducer a
 moldTransducer anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
 
-mkTransducer :: (Arbitrary a) => TPred a -> Transducer a 
+mkTransducer :: (Arbitrary a) => TPred a -> Transducer a
 mkTransducer = moldTransducer . mkAcceptor
 
 mkAcceptor :: TPred a -> Acceptor a
@@ -181,14 +184,14 @@ strExtend [] = error "No value in list"
 
 
 evalLTL :: TPred a -> Str a -> Bool
-evalLTL = evalLTL' 20 
+evalLTL = evalLTL' 20
 
 evalLTL' :: Int -> TPred a -> Str a -> Bool
 evalLTL' checksLeft formulae aStr@(h ::: t) =
     checksLeft <= 0 || case formulae of
         Tautology       -> True
         Contradiction   -> False
-        Atom pred       -> pred h
+        Atom headPred   -> headPred h
         Not aTPred      -> not $ eval aTPred aStr
         Or phi psi      -> eval phi aStr || eval psi aStr
         And phi psi     -> eval phi aStr && eval psi aStr
@@ -200,7 +203,7 @@ evalLTL' checksLeft formulae aStr@(h ::: t) =
         After anInt phi -> if anInt == 0
                             then eval phi aStr
                             else evalNext (After (anInt - 1) phi) strTail
-    
+
     where   evalNext = evalLTL' (checksLeft - 1)
             eval = evalLTL' checksLeft
             strTail = adv t

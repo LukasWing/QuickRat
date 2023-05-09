@@ -15,6 +15,7 @@ import Rattus.Stream hiding (filter, map)
 import Test.QuickCheck.Monadic
 import qualified Test.QuickCheck.Monadic as M
 import Data.Bits ((.|.))
+import Core
 
 genComplex'' = arbitrary >>= (\a ->
              arbitrary >>= (\b ->
@@ -66,6 +67,15 @@ diceRoller nSides = do
 genMe :: IO Int
 genMe = generate (arbitrary :: Gen Int)
 
+p :: Acceptor Int
+p = NextA $ check odd
+q :: Acceptor Int
+q = NextA $ check even
+xQ = NextA (\_ -> q)
+
+pAndXQ = NextA $ 
+  \x1 -> if odd x1 then xQ else Reject
+  
 
 run = do
    

@@ -5,7 +5,7 @@
 module CoreTest (
     runTests
 ) where
-import Core 
+import Core
 import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitrary), Positive (..), NonNegative (..))
 import Data.Maybe (isNothing )
 import Data.Bits ((.|.))
@@ -23,10 +23,17 @@ evenGen = (2*) <$> arbitrary
 prop_restictWith_arbitraryAndContradiction_GenOfNothing :: Property
 prop_restictWith_arbitraryAndContradiction_GenOfNothing =
     forAll
-        (let (NextT inside) = 
-                (arbitraryTransducer:: Transducer Int) `restrictWith` mkAcceptor Contradiction 
+        (let (NextT inside) =
+                (arbitraryTransducer:: Transducer Int) `restrictWith` mkAcceptor Contradiction
         in inside)
         isNothing
+
+
+x1Even :: Acceptor Int
+x1Even = NextA (\x -> if even x then Accept else Reject)
+
+x2Odd :: Acceptor Int
+x2Odd = NextA (\_ -> NextA (\x1 -> if odd x1 then Accept else Reject))
 
 prop_andA_x2Oddx1Even_23Accepts :: Property
 prop_andA_x2Oddx1Even_23Accepts =
@@ -47,17 +54,27 @@ prop_andA_x2Oddx1Even_oddRejects =
             in  show (firstCheck oddN) == "R"
 
 --- Acceptor testing --------------------------------------------------------------
+p :: Acceptor Int
+p = NextA $ check odd
+q :: Acceptor Int
+q = NextA $ check even
+
+pAndXQ = NextA $ \x1 -> if odd x1 then q else Reject
+
+prop_accept_oddEven_only123accepted =
+    accept (strExtend [1,2,3]) pAndXQ
+
+prop_accept_oddEven_223and138notAccepted =
+    not (accept (strExtend [2,2,3]) pAndXQ)
+    && not (accept (strExtend [1,3,8]) pAndXQ)
+
+
 prop_mkAcceptor_x1EvenX2Odd_holdOnStreams :: Bool
 prop_mkAcceptor_x1EvenX2Odd_holdOnStreams =
      accept
         (strExtend [2,1])
         (mkAcceptor $ Atom even `And` Imminently (Atom odd))
 
-x1Even :: Acceptor Int
-x1Even = NextA (\x -> if even x then Accept else Reject)
-
-x2Odd :: Acceptor Int
-x2Odd = NextA (\_ -> NextA (\x1 -> if odd x1 then Accept else Reject))
 
 prop_mkStamate_afterNAlwaysOdd :: Positive Int -> Bool
 prop_mkStamate_afterNAlwaysOdd (Positive {getPositive=pN}) =
@@ -89,14 +106,14 @@ aTransducer `satisfies` aTPred =
         (trans aTransducer)
         $ evalLTL aTPred
 
-prop_trans_constOfThree_allThrees :: Property 
+prop_trans_constOfThree_allThrees :: Property
 prop_trans_constOfThree_allThrees =
     constTransducer (3::Int) `satisfies` Always (Atom (==3))
-    
+
 prop_ltlProperty_pred_fPasses :: Property
 prop_ltlProperty_pred_fPasses =
     ltlProperty f (Always (Atom (<10))) (Always (Atom not))
-    where f (h:::t) = (h>=(10::Int)) ::: delay ( f(adv t))
+    where f (h:::t) = (h>=(10::Int)) ::: delay ( f (adv t))
 
 return []
 runTests :: IO Bool
