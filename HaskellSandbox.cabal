@@ -25,12 +25,8 @@ source-repository head
 
 library
   exposed-modules:
-      Core
       CoreRn
-      Evaluators
-      Generators
       Helpers
-      LTL
   other-modules:
       Paths_HaskellSandbox
   hs-source-dirs:
@@ -70,10 +66,6 @@ test-suite HaskellSandbox-test
   main-is: Spec.hs
   other-modules:
       CoreTest
-      EvaluatorTest
-      GeneratorTest
-      HelpersTest
-      LTLTest
       Paths_HaskellSandbox
   hs-source-dirs:
       test
