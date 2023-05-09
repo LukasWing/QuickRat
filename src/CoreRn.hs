@@ -162,16 +162,8 @@ restrictWith (NextT gen) (NextA passTest) =
 ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -> Property
 ltlProperty fUnderTest inPred outPred =
     forAll
-        (trans $ (moldTransducer . mkAcceptor) inPred)
+        (trans $ mkTransducer inPred)
         $ \aStr -> accept (fUnderTest aStr) (mkAcceptor outPred)
-
-
-f :: Str Int -> Str Bool
-f aStr = error "NI"
-
-prop_f_pBelow10_vAlwaysOff :: Property
-prop_f_pBelow10_vAlwaysOff =
-    ltlProperty f (Always (Atom (<10))) (Always (Atom not))
 
 constTransducer :: a -> Transducer a
 constTransducer value = NextT $ return (Just (value, constTransducer value))

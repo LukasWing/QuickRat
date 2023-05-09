@@ -10,7 +10,8 @@ import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitra
 import Data.Maybe (isNothing )
 import Data.Bits ((.|.))
 import Control.Monad (liftM2)
-import Rattus.Stream (Str)
+import Rattus.Primitives (delay, adv)
+import Rattus.Stream (Str(..))
 
 --- Acceptor modifiers ------------------------------------------------------------------------
 oddGen :: Gen Int
@@ -92,6 +93,10 @@ prop_trans_constOfThree_allThrees :: Property
 prop_trans_constOfThree_allThrees =
     constTransducer (3::Int) `satisfies` Always (Atom (==3))
     
+prop_ltlProperty_pred_fPasses :: Property
+prop_ltlProperty_pred_fPasses =
+    ltlProperty f (Always (Atom (<10))) (Always (Atom not))
+    where f (h:::t) = (h>=(10::Int)) ::: delay ( f(adv t))
 
 return []
 runTests :: IO Bool
