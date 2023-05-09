@@ -5,7 +5,7 @@
 module CoreTest (
     runTests
 ) where
-import CoreRn 
+import Core 
 import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitrary), Positive (..), NonNegative (..))
 import Data.Maybe (isNothing )
 import Data.Bits ((.|.))
