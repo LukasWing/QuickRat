@@ -8,34 +8,43 @@ import Test.QuickCheck (Gen, arbitrary, Arbitrary, resize, forAll)
 import Data.Maybe (fromJust)
 import Test.QuickCheck.Property (Property)
 
-
-
 --- Types ----------------------------------------------------------------------------
 data TPred a where
-    Atom        :: (a -> Bool) -> TPred a
-    Not         :: TPred a -> TPred a
-    Or          :: TPred a -> TPred a -> TPred a
-    Until       :: TPred a -> TPred a -> TPred a
-    Imminently  :: TPred a -> TPred a
-    And         :: TPred a -> TPred a -> TPred a
-    Implies     :: TPred a -> TPred a -> TPred a
-    Always      :: TPred a -> TPred a
-    Eventually  :: TPred a -> TPred a
-    After       :: Int -> TPred a -> TPred a
+    Tautology       :: TPred a 
+    Contradiction   :: TPred a
+    Atom            :: (a -> Bool) -> TPred a
+    Not             :: TPred a -> TPred a
+    Or              :: TPred a -> TPred a -> TPred a
+    Until           :: TPred a -> TPred a -> TPred a
+    Imminently      :: TPred a -> TPred a
+    And             :: TPred a -> TPred a -> TPred a
+    Implies         :: TPred a -> TPred a -> TPred a
+    Always          :: TPred a -> TPred a
+    Eventually      :: TPred a -> TPred a
+    After           :: Int -> TPred a -> TPred a
 
 data Acceptor a = Accept
                 | Reject
                 | NextA (a -> Acceptor a)
 
 instance Show (Acceptor a) where
-    show Accept     = "P"
-    show Reject     = "F"
+    show Accept     = "A"
+    show Reject     = "R"
     show (NextA _)  = "N"
 
 newtype Transducer a = NextT (Gen (Maybe (a, Transducer a)))
 
 instance Show a => Show (Transducer a) where
-  show _ = "a Transducer"
+    show _ = "a Transducer"
+
+instance (Show a) => Show (Str a) where
+    show aStr =  "Str: " ++ (show . strTake (20::Int)) aStr ++ " ..."
+        where 
+        strTake n = strTake' n []
+        strTake' picksLeft accumulator (h:::t) =
+            if picksLeft > 0
+                then strTake' (picksLeft - 1) (h:accumulator) (adv t)
+                else reverse accumulator
 
 --- Runners -----------------------------------------------------------------------
 trans :: Transducer a -> Gen (Str a)
@@ -74,18 +83,20 @@ mkTransducer anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
 mkAcceptor :: TPred a -> Acceptor a
 mkAcceptor formulae =
     case formulae of
-            Atom headPred   -> NextA (\h -> if headPred h then Accept else Reject)
-            Not phi         -> negateA $ mkAcceptor phi
-            Or phi psi      -> mkAcceptor (Not (Not phi `And` Not psi))
-            And phi psi     -> mkAcceptor phi `andA` mkAcceptor psi
-            Implies phi psi -> mkAcceptor (Not phi `Or` psi)
-            Imminently phi  -> NextA (\_ -> mkAcceptor phi)
-            Eventually phi  -> mkAcceptor $ phi `Or` Imminently (Eventually phi)
-            Until phi psi   -> mkAcceptor $ psi `Or` Imminently (phi `Until` psi)
-            Always phi      -> mkAcceptor $ phi `And` Imminently (Always phi)
-            After anInt phi -> mkAcceptor $ if anInt == 0
-                                            then phi
-                                            else Imminently (After (anInt - 1) phi)
+        Tautology       -> Accept
+        Contradiction   -> Reject 
+        Atom headPred   -> NextA (\h -> if headPred h then Accept else Reject)
+        Not phi         -> negateA $ mkAcceptor phi
+        Or phi psi      -> mkAcceptor (Not (Not phi `And` Not psi))
+        And phi psi     -> mkAcceptor phi `andA` mkAcceptor psi
+        Implies phi psi -> mkAcceptor (Not phi `Or` psi)
+        Imminently phi  -> NextA (\_ -> mkAcceptor phi)
+        Eventually phi  -> mkAcceptor $ phi `Or` Imminently (Eventually phi)
+        Until phi psi   -> mkAcceptor $ psi `Or` Imminently (phi `Until` psi)
+        Always phi      -> mkAcceptor $ phi `And` Imminently (Always phi)
+        After anInt phi -> mkAcceptor $ if anInt == 0
+                                        then phi
+                                        else Imminently (After (anInt - 1) phi)
 
 --- Modifiers ------------------------------------------------------------------------
 negateA :: Acceptor a -> Acceptor a
@@ -125,32 +136,28 @@ restrictWith (NextT gen) (NextA passTest) =
     in NextT $ loop (nTries::Int)
 
 
-instance (Show a) => Show (Str a) where
-    show aStr =  "Str: " ++ (show . strTake 20) aStr
-
-strTake :: Integer -> Str a -> [a]
-strTake n aStr =
-    let strTake' picksLeft accumulator (h:::t) =
-            if picksLeft > 0
-                then strTake' (picksLeft - 1) (h:accumulator) (adv t)
-                else reverse accumulator
-    in strTake' n [] aStr
-
+--- Utilities -----------------------------------------------------------------------------
 ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -> Property
-ltlProperty f inPred outPred = 
+ltlProperty fUnderTest inPred outPred = 
     forAll 
         (trans $ (mkTransducer . mkAcceptor) inPred)
-        $ \aStr -> accept (f aStr) (mkAcceptor outPred)
+        $ \aStr -> accept (fUnderTest aStr) (mkAcceptor outPred)
 
     
 f :: Str Int -> Str Bool
 f aStr = error "NI"
 
+constStr :: a -> Str a
+constStr v = v ::: delay (constStr v)
+
+strExtend :: [a] -> Str a
+strExtend [h] = constStr h
+strExtend (h:t) = h ::: delay (strExtend t) 
+strExtend [] = error "No value in list"
+
 prop_f_pBelow10_vAlwaysOff :: Property
 prop_f_pBelow10_vAlwaysOff =
     ltlProperty f (Always (Atom (<10))) (Always (Atom not))
 
--- satisfies :: TPred a -> Str a -> Bool
--- mkStrGen :: TPred a -> Gen (Str a)
 
 
