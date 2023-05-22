@@ -62,43 +62,47 @@ q = NextA $ check even
 pAndXQ = NextA $ \x1 -> if odd x1 then q else Reject
 
 prop_accept_oddEven_only123accepted =
-    accept (strExtend [1,2,3]) pAndXQ
+    accept pAndXQ (strExtend [1,2,3])
 
 prop_accept_oddEven_223and138notAccepted =
-    not (accept (strExtend [2,2,3]) pAndXQ)
-    && not (accept (strExtend [1,3,8]) pAndXQ)
+    not (accept pAndXQ (strExtend [2,2,3]))
+    && not (accept pAndXQ (strExtend [1,3,8]))
 
 
 prop_mkAcceptor_x1EvenX2Odd_holdOnStreams :: Bool
 prop_mkAcceptor_x1EvenX2Odd_holdOnStreams =
      accept
-        (strExtend [2,1])
         (mkAcceptor $ Atom even `And` Imminently (Atom odd))
+        $ strExtend [2,1]
 
 
 prop_mkStamate_afterNAlwaysOdd :: Positive Int -> Bool
 prop_mkStamate_afterNAlwaysOdd (Positive {getPositive=pN}) =
     let n = (pN `mod` 10) in
     accept
-        (strExtend $ replicate n (2::Int) ++ [1])
-        $ mkAcceptor (After n  (Always (Atom odd))
-                    `And`
-                    Not (After (n-1) (Atom odd)))
+        (mkAcceptor (
+                After n  (Always (Atom odd))
+                `And`
+                Not (After (n-1) (Atom odd))
+        ))
+        $ strExtend $ replicate n (2::Int) ++ [1]
 
 prop_mkStamate_eventually :: Positive Int -> Bool
 prop_mkStamate_eventually (Positive {getPositive=pN}) =
     let n = (pN `mod` 10) in
     accept
+        (mkAcceptor (Eventually (Atom (==1))))
         (strExtend $ replicate n (2::Int) ++ [1,-1])
-        $ mkAcceptor (Eventually (Atom (==1)))
 
 --- Next state functions testing -------------------------------------------------
 prop_accept_anyStream_constsOK :: Str Bool -> NonNegative Int -> Bool
 prop_accept_anyStream_constsOK aStr (NonNegative {getNonNegative=i}) =
-    not $ evalAcceptor (accept' aStr Reject 0)
-    && evalAcceptor (accept' aStr (NextA (const Reject)) 0)
-    && evalAcceptor (accept' aStr Accept 0)
-    && evalAcceptor (accept' aStr (NextA (const Accept)) i)
+    all (\acceptance -> evalAcceptor (acceptance aStr)) [
+        accept' 0 $ NextA (const Reject),
+        accept' i $ NextA (const Accept),
+        accept' 0 Accept
+    ]
+    && not (evalAcceptor (accept' 0 Reject aStr))
 
 satisfies :: Show a => Transducer a -> TPred a -> Property
 aTransducer `satisfies` aTPred =

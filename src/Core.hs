@@ -67,18 +67,27 @@ trans (NextT aGen) = do
     rest <- trans aTransducer
     return $ value ::: delay rest
 
-accept :: Str a -> Acceptor a -> Bool
-accept aStr anAcceptor  = evalAcceptor $ accept' aStr anAcceptor 20
+accept ::  Acceptor a -> Str a -> Bool
+accept anAcceptor  = evalAcceptor . accept' 20 anAcceptor
 
-accept' :: Str a -> Acceptor a -> Int -> Acceptor a
-accept' (h ::: t) (NextA makeNext) checksLeft =
+f :: Str Int -> Str Bool
+f _ = constStr True
+
+prop_f_pBelow10_vAlwaysOff :: Property
+prop_f_pBelow10_vAlwaysOff =
+    forAll
+        (trans $ mkTransducer $ Always (Atom (<10)))
+        $ accept (mkAcceptor (Always (Atom not))) . f
+
+accept' :: Int -> Acceptor a -> Str a ->  Acceptor a
+accept' checksLeft  (NextA makeNext) (h ::: t) =
     if checksLeft == 0
         then NextA makeNext
         else case makeNext h of
             Accept -> Accept
             Reject -> Reject
-            continuation -> accept' (adv t) continuation (checksLeft - 1)
-accept'  _ finished _ = finished
+            continuation -> accept' (checksLeft - 1) continuation (adv t)
+accept'  _ rejectOrAccept _ = rejectOrAccept
 
 evalAcceptor :: Acceptor a -> Bool
 evalAcceptor Accept = True
@@ -98,11 +107,11 @@ arbitraryTransducer = NextT $ do
     element <- (arbitrary :: Gen a)
     return (Just (element, arbitraryTransducer))
 
-moldTransducer :: (Arbitrary a) => Acceptor a -> Transducer a
-moldTransducer anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
+ofAcceptor :: (Arbitrary a) => Acceptor a -> Transducer a
+ofAcceptor anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
 
 mkTransducer :: (Arbitrary a) => TPred a -> Transducer a
-mkTransducer = moldTransducer . mkAcceptor
+mkTransducer = ofAcceptor . mkAcceptor
 
 mkAcceptor :: TPred a -> Acceptor a
 mkAcceptor formulae =
@@ -166,7 +175,8 @@ ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -
 ltlProperty fUnderTest inPred outPred =
     forAll
         (trans $ mkTransducer inPred)
-        $ \aStr -> accept (fUnderTest aStr) (mkAcceptor outPred)
+        $ accept (mkAcceptor outPred)  . fUnderTest
+
 
 constTransducer :: a -> Transducer a
 constTransducer value = NextT $ return (Just (value, constTransducer value))
