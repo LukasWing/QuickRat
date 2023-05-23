@@ -117,7 +117,21 @@ prop_trans_constOfThree_allThrees =
 prop_ltlProperty_pred_fPasses :: Property
 prop_ltlProperty_pred_fPasses =
     ltlProperty f (Always (Atom (<10))) (Always (Atom not))
-    where f (h:::t) = (h>=(10::Int)) ::: delay ( f (adv t))
+    where f (h:::t) = (h>=(10::Int)) ::: delay (f (adv t))
+
+
+f :: Str Int -> Str Bool
+f _ = constStr False
+
+prop_f_pBelow10_vAlwaysOff :: Property
+prop_f_pBelow10_vAlwaysOff =
+    forAll
+        (trans $ mkTransducer $ Always (Atom (<10)))
+        $ accept (mkAcceptor (Always (Atom not))) . f
+
+prop_f_pBelow10_vAlwaysOff' :: Property
+prop_f_pBelow10_vAlwaysOff' = 
+    ltlProperty f (Always (Atom (<10))) (Always (Atom not))
 
 return []
 runTests :: IO Bool

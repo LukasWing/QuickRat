@@ -38,23 +38,24 @@ newtype Transducer a = NextT (Gen (Maybe (a, Transducer a)))
 instance (Arbitrary a) => Arbitrary (Transducer a) where
     arbitrary = return arbitraryTransducer
 
-    shrink (NextT aGen) = [
-        NextT $ scale (`div` expos2 n) aGen |  n <- [1..10]]
-        where
-            expos2 :: Int -> Int
-            expos2 n = round $ sqrt (2::Float) ** fromIntegral n
-
 instance Show a => Show (Transducer a) where
     show _ = "a Transducer"
 
+strTake :: Int -> Str a -> [a]
+strTake n = strTake' n [] where 
+    strTake' picksLeft accumulator (h:::t) =
+        if picksLeft > 0
+            then strTake' (picksLeft - 1) (h:accumulator) (adv t)
+            else reverse accumulator
+
 instance (Show a) => Show (Str a) where
-    show aStr =  "Str: " ++ (show . strTake (20::Int)) aStr ++ " ..."
-        where
-        strTake n = strTake' n []
-        strTake' picksLeft accumulator (h:::t) =
-            if picksLeft > 0
-                then strTake' (picksLeft - 1) (h:accumulator) (adv t)
-                else reverse accumulator
+    show aStr =  "Str: " ++ (show . strTake 20) aStr ++ " ..."
+
+class ProbEq a where
+    (=~=) :: a -> a -> Bool
+
+instance (Eq a) => ProbEq (Str a) where
+    stream1 =~= stream2 = strTake 20 stream1 == strTake 20 stream2
 
 instance (Arbitrary a)  => Arbitrary (Str a) where
     arbitrary = trans arbitraryTransducer
@@ -69,15 +70,6 @@ trans (NextT aGen) = do
 
 accept ::  Acceptor a -> Str a -> Bool
 accept anAcceptor  = evalAcceptor . accept' 20 anAcceptor
-
-f :: Str Int -> Str Bool
-f _ = constStr True
-
-prop_f_pBelow10_vAlwaysOff :: Property
-prop_f_pBelow10_vAlwaysOff =
-    forAll
-        (trans $ mkTransducer $ Always (Atom (<10)))
-        $ accept (mkAcceptor (Always (Atom not))) . f
 
 accept' :: Int -> Acceptor a -> Str a ->  Acceptor a
 accept' checksLeft  (NextA makeNext) (h ::: t) =
@@ -141,33 +133,35 @@ negateA (NextA f) =  NextA (negateA . f)
 andA :: Acceptor a -> Acceptor a -> Acceptor a
 andA (NextA f1) (NextA f2) =
     NextA $ \x1 ->
-        -- trace ("debug:"++ show (NextA f1)) $
         case f1 x1 of
             Accept -> NextA f2
             Reject -> Reject
             NextA f1Inner -> NextA f1Inner `andA` f2 x1
 andA Reject _ = Reject
 andA _ Reject = Reject
-andA Accept st1 = st1
-andA st2 Accept = st2
+andA Accept st = st
+andA st Accept = st
+
+-- restrictWith' :: Transducer a -> Acceptor a -> Transducer a
 
 restrictWith :: Transducer a -> Acceptor a -> Transducer a
 restrictWith _ Reject = rejectTransducer
 restrictWith aTransducer Accept = aTransducer
-restrictWith (NextT gen) (NextA passTest) =
-    let nTries = 1000
-        loop n = do
-            sz <- getSize
-            value <- if  sz < 2 then scale (+2) gen else gen
-            case value of
-                Nothing -> return Nothing
-                Just (genVal, nextGen) ->
-                    -- trace ("genVal: "++ show genVal) $ 
-                    case passTest genVal of
-                        Accept -> return $ Just (genVal, nextGen)
-                        Reject -> if n == 0 then return Nothing else loop (n-1)
-                        anAcceptor -> return $ Just (genVal, restrictWith nextGen anAcceptor)
-    in NextT $ loop (nTries::Int)
+restrictWith aTransducer (NextA someTest) = restrictWith' aTransducer someTest where 
+    restrictWith' (NextT gen) passTest =  
+        let nTries = 1000
+            loop n = do
+                sz <- getSize
+                value <- if  sz < 2 then scale (+2) gen else gen
+                case value of
+                    Nothing -> return Nothing
+                    Just (genVal, nextGen) ->
+                        -- trace ("genVal: "++ show genVal) $ 
+                        case passTest genVal of
+                            Accept -> return $ Just (genVal, nextGen)
+                            Reject -> if n == 0 then return Nothing else loop (n-1)
+                            NextA passTest' -> return $ Just (genVal, restrictWith' nextGen passTest')
+        in NextT $ loop (nTries::Int)
 
 
 --- Utilities -----------------------------------------------------------------------------
@@ -197,8 +191,8 @@ evalLTL :: TPred a -> Str a -> Bool
 evalLTL = evalLTL' 20
 
 evalLTL' :: Int -> TPred a -> Str a -> Bool
-evalLTL' checksLeft formulae aStr@(h ::: t) =
-    checksLeft <= 0 || case formulae of
+evalLTL' checksLeft formulae aStr@(h ::: t) = checksLeft <= 0 
+    || case formulae of
         Tautology       -> True
         Contradiction   -> False
         Atom headPred   -> headPred h
@@ -213,11 +207,7 @@ evalLTL' checksLeft formulae aStr@(h ::: t) =
         After anInt phi -> if anInt == 0
                             then eval phi aStr
                             else evalNext (After (anInt - 1) phi) strTail
-
-    where   evalNext = evalLTL' (checksLeft - 1)
-            eval = evalLTL' checksLeft
-            strTail = adv t
-
-
-
-
+    where   
+        evalNext = evalLTL' (checksLeft - 1)
+        eval = evalLTL' checksLeft
+        strTail = adv t
