@@ -142,27 +142,22 @@ andA _ Reject = Reject
 andA Accept st = st
 andA st Accept = st
 
--- restrictWith' :: Transducer a -> Acceptor a -> Transducer a
-
-restrictWith :: Transducer a -> Acceptor a -> Transducer a
+restrictWith :: forall a. Transducer a -> Acceptor a -> Transducer a
 restrictWith _ Reject = rejectTransducer
 restrictWith aTransducer Accept = aTransducer
-restrictWith aTransducer (NextA someTest) = restrictWith' aTransducer someTest where 
-    restrictWith' (NextT gen) passTest =  
-        let nTries = 1000
-            loop n = do
-                sz <- getSize
-                value <- if  sz < 2 then scale (+2) gen else gen
-                case value of
-                    Nothing -> return Nothing
-                    Just (genVal, nextGen) ->
-                        -- trace ("genVal: "++ show genVal) $ 
-                        case passTest genVal of
-                            Accept -> return $ Just (genVal, nextGen)
-                            Reject -> if n == 0 then return Nothing else loop (n-1)
-                            NextA passTest' -> return $ Just (genVal, restrictWith' nextGen passTest')
-        in NextT $ loop (nTries::Int)
-
+restrictWith aTransducer (NextA someTest) = rwInner aTransducer someTest where
+    rwInner :: Transducer a -> (a -> Acceptor a) -> Transducer a 
+    rwInner (NextT gen) passTest = NextT $ loop (1000::Int) where 
+        loop :: Int -> Gen (Maybe (a, Transducer a))
+        loop n = do
+            sz <- getSize
+            value <- if  sz < 2 then scale (+2) gen else gen
+            case value of
+                Nothing -> return Nothing
+                Just (genVal, xGen) -> case passTest genVal of
+                        Accept -> return $ Just (genVal, xGen)
+                        Reject -> if n == 0 then return Nothing else loop (n - 1)
+                        NextA passTest' -> return $ Just (genVal, rwInner xGen passTest')
 
 --- Utilities -----------------------------------------------------------------------------
 ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -> Property
