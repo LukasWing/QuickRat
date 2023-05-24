@@ -99,6 +99,11 @@ arbitraryTransducer = NextT $ do
     element <- (arbitrary :: Gen a)
     return (Just (element, arbitraryTransducer))
 
+guidedTransducer :: forall a. (Arbitrary a) => Gen a -> Transducer a
+guidedTransducer aGen = NextT $ do
+    element <- aGen 
+    return (Just (element, arbitraryTransducer))
+
 ofAcceptor :: (Arbitrary a) => Acceptor a -> Transducer a
 ofAcceptor anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
 
@@ -145,19 +150,20 @@ andA st Accept = st
 restrictWith :: forall a. Transducer a -> Acceptor a -> Transducer a
 restrictWith _ Reject = rejectTransducer
 restrictWith aTransducer Accept = aTransducer
-restrictWith aTransducer (NextA someTest) = rwInner aTransducer someTest where
-    rwInner :: Transducer a -> (a -> Acceptor a) -> Transducer a 
-    rwInner (NextT gen) passTest = NextT $ loop (1000::Int) where 
-        loop :: Int -> Gen (Maybe (a, Transducer a))
-        loop n = do
-            sz <- getSize
-            value <- if  sz < 2 then scale (+2) gen else gen
-            case value of
-                Nothing -> return Nothing
-                Just (genVal, xGen) -> case passTest genVal of
-                        Accept -> return $ Just (genVal, xGen)
-                        Reject -> if n == 0 then return Nothing else loop (n - 1)
-                        NextA passTest' -> return $ Just (genVal, rwInner xGen passTest')
+restrictWith aTransducer (NextA someTest) = rwInner aTransducer someTest
+
+rwInner :: forall a. Transducer a -> (a -> Acceptor a) -> Transducer a 
+rwInner (NextT gen) passTest = NextT $ loop (1000::Int) where 
+    loop :: Int -> Gen (Maybe (a, Transducer a))
+    loop n = do
+        sz <- getSize
+        value <- if  sz < 2 then scale (+2) gen else gen
+        case value of
+            Nothing -> return Nothing
+            Just (genVal, xGen) -> case passTest genVal of
+                Accept -> return $ Just (genVal, xGen)
+                Reject -> if n == 0 then return Nothing else loop (n - 1)
+                NextA passTest' -> return $ Just (genVal, rwInner xGen passTest')
 
 --- Utilities -----------------------------------------------------------------------------
 ltlProperty :: (Arbitrary a, Show a) => (Str a -> Str b) -> TPred a -> TPred b -> Property

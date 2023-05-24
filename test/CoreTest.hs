@@ -6,7 +6,7 @@ module CoreTest (
     runTests
 ) where
 import Core
-import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitrary), Positive (..), NonNegative (..))
+import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitrary), Positive (..), NonNegative (..), oneof)
 import Data.Maybe (isNothing )
 import Data.Bits ((.|.))
 import Control.Monad (liftM2)
@@ -130,8 +130,21 @@ prop_f_pBelow10_vAlwaysOff =
         $ accept (mkAcceptor (Always (Atom not))) . f
 
 prop_f_pBelow10_vAlwaysOff' :: Property
-prop_f_pBelow10_vAlwaysOff' = 
+prop_f_pBelow10_vAlwaysOff' =
     ltlProperty f (Always (Atom (<10))) (Always (Atom not))
+
+
+
+threadDucer :: Transducer String
+threadDucer = guidedTransducer $ oneof $ map return ["t1", "t7", "t33", "t42"]
+
+prop_alwaysThread42_Accept :: Property
+prop_alwaysThread42_Accept =
+    forAll
+        (trans $ threadDucer `restrictWith` mkAcceptor (Always (Atom (=="t42"))))
+        $ const True
+
+
 
 return []
 runTests :: IO Bool
