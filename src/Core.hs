@@ -137,12 +137,7 @@ negateA Accept = Reject
 negateA (NextA f) =  NextA (negateA . f)
 
 andA :: Acceptor a -> Acceptor a -> Acceptor a
-andA (NextA f1) (NextA f2) =
-    NextA $ \x1 ->
-        case f1 x1 of
-            Accept -> f2 x1
-            Reject -> Reject
-            NextA f1Inner -> NextA f1Inner `andA` f2 x1
+andA (NextA f1) (NextA f2) = NextA $ \x1 -> f1 x1 `andA` f2 x1
 andA Reject _ = Reject
 andA _ Reject = Reject
 andA Accept st = st
