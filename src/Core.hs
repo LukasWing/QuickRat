@@ -8,6 +8,7 @@ import Test.QuickCheck
     ( Gen, arbitrary, Arbitrary(..), forAll, scale, getSize )
 import Data.Maybe (fromJust)
 import Test.QuickCheck.Property (Property)
+import Debug.Trace (trace)
 
 --- Types ----------------------------------------------------------------------------
 data TPred a where
@@ -104,10 +105,10 @@ guidedTransducer aGen = NextT $ do
     element <- aGen 
     return (Just (element, guidedTransducer aGen))
 
-ofAcceptor :: (Arbitrary a) => Acceptor a -> Transducer a
+ofAcceptor :: (Arbitrary a, Show a) => Acceptor a -> Transducer a
 ofAcceptor anAcceptor = arbitraryTransducer `restrictWith` anAcceptor
 
-mkTransducer :: (Arbitrary a) => TPred a -> Transducer a
+mkTransducer :: (Arbitrary a, Show a) => TPred a -> Transducer a
 mkTransducer = ofAcceptor . mkAcceptor
 
 mkAcceptor :: TPred a -> Acceptor a
@@ -122,7 +123,7 @@ mkAcceptor formulae =
         Implies phi psi -> mkAcceptor (Not phi `Or` psi)
         Imminently phi  -> NextA (\_ -> mkAcceptor phi)
         Eventually phi  -> mkAcceptor $ phi `Or` Imminently (Eventually phi)
-        Until phi psi   -> mkAcceptor $ psi `Or` Imminently (phi `Until` psi)
+        Until phi psi   -> mkAcceptor $ psi `Or` (phi `And` Imminently (phi `Until` psi))
         Always phi      -> mkAcceptor $ phi `And` Imminently (Always phi)
         After anInt phi -> mkAcceptor $ if anInt == 0
                                         then phi
@@ -139,7 +140,7 @@ andA :: Acceptor a -> Acceptor a -> Acceptor a
 andA (NextA f1) (NextA f2) =
     NextA $ \x1 ->
         case f1 x1 of
-            Accept -> NextA f2
+            Accept -> f2 x1
             Reject -> Reject
             NextA f1Inner -> NextA f1Inner `andA` f2 x1
 andA Reject _ = Reject
@@ -147,20 +148,22 @@ andA _ Reject = Reject
 andA Accept st = st
 andA st Accept = st
 
-restrictWith :: forall a. Transducer a -> Acceptor a -> Transducer a
+restrictWith :: forall a.  Show a => Transducer a -> Acceptor a -> Transducer a
 restrictWith _ Reject = rejectTransducer
 restrictWith aTransducer Accept = aTransducer
 restrictWith aTransducer (NextA someTest) = rwInner aTransducer someTest
 
-rwInner :: forall a. Transducer a -> (a -> Acceptor a) -> Transducer a 
+rwInner :: forall a. Show a => Transducer a -> (a -> Acceptor a) -> Transducer a 
 rwInner (NextT gen) passTest = NextT $ loop (1000::Int) where 
     loop :: Int -> Gen (Maybe (a, Transducer a))
     loop n = do
         sz <- getSize
-        value <- if  sz < 2 then scale (+2) gen else gen
+        value <- if  sz < 3 then scale (+3) gen else gen
         case value of
             Nothing -> return Nothing
-            Just (genVal, xGen) -> case passTest genVal of
+            Just (genVal, xGen) -> 
+                -- trace ("genVal: "++ show genVal) $
+                case passTest genVal of
                 Accept -> return $ Just (genVal, xGen)
                 Reject -> if n == 0 then return Nothing else loop (n - 1)
                 NextA passTest' -> return $ Just (genVal, rwInner xGen passTest')
