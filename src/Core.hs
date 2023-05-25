@@ -102,7 +102,7 @@ arbitraryTransducer = NextT $ do
 guidedTransducer :: forall a. (Arbitrary a) => Gen a -> Transducer a
 guidedTransducer aGen = NextT $ do
     element <- aGen 
-    return (Just (element, arbitraryTransducer))
+    return (Just (element, guidedTransducer aGen))
 
 ofAcceptor :: (Arbitrary a) => Acceptor a -> Transducer a
 ofAcceptor anAcceptor = arbitraryTransducer `restrictWith` anAcceptor

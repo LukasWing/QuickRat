@@ -6,13 +6,13 @@ module CoreTest (
     runTests
 ) where
 import Core
-import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitrary), Positive (..), NonNegative (..), oneof)
+import Test.QuickCheck (quickCheckAll, Property, forAll, Gen, Arbitrary (arbitrary), Positive (..), NonNegative (..), oneof, collect)
 import Data.Maybe (isNothing )
 import Data.Bits ((.|.))
 import Control.Monad (liftM2)
 import Rattus.Primitives (delay, adv)
 import Rattus.Stream (Str(..))
-
+import Rattus.Event (switch, Event)
 --- Acceptor modifiers ------------------------------------------------------------------------
 oddGen :: Gen Int
 oddGen = (.|.) 1 <$> arbitrary
@@ -20,8 +20,8 @@ oddGen = (.|.) 1 <$> arbitrary
 evenGen :: Gen Int
 evenGen = (2*) <$> arbitrary
 
-prop_restictWith_arbitraryAndContradiction_GenOfNothing :: Property
-prop_restictWith_arbitraryAndContradiction_GenOfNothing =
+prop_restrictWith_arbitraryAndContradiction_GenOfNothing :: Property
+prop_restrictWith_arbitraryAndContradiction_GenOfNothing =
     forAll
         (let (NextT inside) =
                 (arbitraryTransducer:: Transducer Int) `restrictWith` mkAcceptor Contradiction
@@ -142,8 +142,90 @@ prop_alwaysThread42_Accept :: Property
 prop_alwaysThread42_Accept =
     forAll
         (trans $ threadDucer `restrictWith` mkAcceptor (Always (Atom (=="t42"))))
-        $ const True
+        $ accept $ mkAcceptor (Always (Atom (=="t42")))
+        -- $ \aStr -> (collect:: Str String -> Bool -> Property) aStr True 
 
+-- make a failing test on mkAcceptor.
+
+prop_mkAcceptor_AlwaysGt3 :: Property
+prop_mkAcceptor_AlwaysGt3 =
+    ltlProperty 
+        (id:: Str Int -> Str Int) 
+        (Always (Atom (>3)))
+        (Always (Atom (>3)))
+
+prop_mkAcceptor_1 :: Property
+prop_mkAcceptor_1 =
+    forAll 
+        (return (constStr (4::Int)))
+        $ accept $ mkAcceptor (Always (Atom (>3)))
+
+prop_mkAcceptor_2 :: Property
+prop_mkAcceptor_2 =
+    forAll 
+        (return (constStr (4::Int)))
+        $ \aStr -> not $ accept (mkAcceptor (Always (Atom (/=4)))) aStr
+
+
+reactToUser :: Str (Bool, Bool) -> Str Bool
+reactToUser _ = constStr True
+
+prop_aAndBPressed_lightFlickers :: Property
+prop_aAndBPressed_lightFlickers =
+    ltlProperty
+        reactToUser
+        (Atom fst `And` Atom snd)
+        $ Atom not `And` Imminently (Atom id)
+            `Or`
+            Atom id `And` Imminently (Atom not)
+
+messager :: Str Int -> Str (Maybe String)
+messager _ = constStr $ Just "Jackpot"
+prop_fivePositiveValues_emitMessageNext :: Property
+prop_fivePositiveValues_emitMessageNext =
+    ltlProperty
+        (messager :: Str Int -> Str (Maybe String))
+        (After 10 (Atom (> 0)) `Until` After 15 Tautology)
+        $ After 15 (Atom (== Just "Jackpot"))
+switch' :: Str a -> Str (Maybe (Str a)) -> Str a
+switch' _ _ = error "Not implemented"
+ 
+
+
+--- PROPs from history -----------------------------------------------------
+
+
+-- prop_suchThatT_simpleConst_GenOfNothing :: Property
+-- prop_suchThatT_simpleConst_GenOfNothing =
+--     forAll
+--         (let (NextG inside) = constOfG True `suchThatT` isConstSM (Just False)
+--         in inside)
+--         isNothing
+
+-- prop_suchThatT_arbitraryAndContradiction_GenOfNothing :: Property
+-- prop_suchThatT_arbitraryAndContradiction_GenOfNothing =
+--     forAll
+--         (let (NextG inside) = arbitraryStamage `suchThatT` (contradictionSM:: Stamate Int)
+--         in inside)
+--         isNothing
+
+-- prop_suchThatT_sameConst2_2strsOnly :: Property
+-- prop_suchThatT_sameConst2_2strsOnly =
+--     forAll
+--         (stamageRun $ constOfG True `suchThatT` isConstSM (Just True))
+--         $ isConstVal True
+
+-- prop_suchThatT_oddEvenTautolgy_IsOddEven :: Property
+-- prop_suchThatT_oddEvenTautolgy_IsOddEven =
+--     forAll
+--         (stamageRun $ oddEven `suchThatT` tautologySM)
+--         (\aStr -> collect aStr $ alternatesOddEven aStr)
+
+-- prop_suchThatT_oddEvenKeepOnlyPositive_IsOddEven :: Property
+-- prop_suchThatT_oddEvenKeepOnlyPositive_IsOddEven =
+--     forAll
+--         (stamageRun $ oddEven `suchThatT` isPositive)
+--         (\aStr -> collect aStr $ alternatesOddEven aStr)
 
 
 return []
