@@ -87,6 +87,11 @@ evalAcceptor Accept = True
 evalAcceptor Reject = False
 evalAcceptor (NextA _) = True
 
+evalAcceptorStrict :: Acceptor a -> Bool
+evalAcceptorStrict Accept = True
+evalAcceptorStrict Reject = False
+evalAcceptorStrict (NextA _) = False
+
 check :: (a -> Bool) -> (a -> Acceptor a)
 check predicate x = if predicate x then Accept else Reject
 

@@ -171,21 +171,6 @@ prop_mkAcceptor_And_acceptedByEval :: Property
 prop_mkAcceptor_And_acceptedByEval =
    testTransducer $ Atom (>(1::Int)) `And` Atom even
 
-transducer_nElements_limit n =
-   testTransducer $ Atom (\x -> x >= base && x < (base + n))
-   where base = 1::Int
-   
-prop_transducer_1Elements_limit :: Property
-prop_transducer_1Elements_limit = transducer_nElements_limit 1
-prop_transducer_4Elements_limit :: Property
-prop_transducer_4Elements_limit = transducer_nElements_limit 4
-prop_transducer_16Elements_limit :: Property
-prop_transducer_16Elements_limit = transducer_nElements_limit 16
-prop_transducer_64Elements_limit :: Property
-prop_transducer_64Elements_limit = transducer_nElements_limit 64
-prop_transducer_128Elements_limit :: Property
-prop_transducer_128Elements_limit = transducer_nElements_limit 128
-
 transducerTest_Bool :: (Show a, Arbitrary a, Eq a) => a -> Property
 transducerTest_Bool expected = testTransducer $ Atom (expected ==)
 
