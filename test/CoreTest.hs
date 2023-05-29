@@ -133,8 +133,6 @@ prop_f_pBelow10_vAlwaysOff' :: Property
 prop_f_pBelow10_vAlwaysOff' =
     ltlProperty f (Always (Atom (<10))) (Always (Atom not))
 
-
-
 threadDucer :: Transducer String
 threadDucer = guidedTransducer $ oneof $ map return ["t1", "t7", "t33", "t42"]
 
@@ -146,73 +144,61 @@ prop_alwaysThread42_Accept =
         -- $ \aStr -> (collect:: Str String -> Bool -> Property) aStr True 
 
 -- make a failing test on mkAcceptor.
-
-prop_mkAcceptor_AlwaysGt3 :: Property
-prop_mkAcceptor_AlwaysGt3 =
-    ltlProperty
-        (id:: Str Int -> Str Int)
-        (Always (Atom (>2)))
-        (Always (Atom (>2)))
-
-prop_mkAcceptor_1 :: Property
-prop_mkAcceptor_1 =
-    forAll
-        (return (constStr (4::Int)))
-        $ accept $ mkAcceptor (Always (Atom (>3)))
-
-prop_mkAcceptor_2 :: Property
-prop_mkAcceptor_2 =
-    forAll
-        (return (constStr (4::Int)))
-        $ \aStr -> not $ accept (mkAcceptor (Always (Atom (/=4)))) aStr
-
-prop_mkAcceptor_3 :: Property
-prop_mkAcceptor_3 =
-    forAll
-        (trans $ mkTransducer (Always (Atom (>(1::Int)))))
-        $ \aStr -> collect aStr $ accept (mkAcceptor (Always (Atom (>1)))) aStr
-
 prop_andA_2 :: Property
-prop_andA_2 =
-    forAll
+prop_andA_2 = forAll
         (trans $ mkTransducer (Atom (>(1::Int)) `And` Atom even))
         $ \aStr -> collect aStr $ accept (mkAcceptor (Atom (>1) `And` Atom even)) aStr
 
-prop_andA_3 :: Property
-prop_andA_3 =
-    forAll
-        (trans $ mkTransducer (Atom even `And`  Atom (>(1::Int))))
-        $ \aStr -> collect aStr $ accept (mkAcceptor (Atom even `And`  Atom (>(1::Int)))) aStr
-
-prop_mkAcceptor_4 :: Property
-prop_mkAcceptor_4 =
-    forAll
-        (trans $ mkTransducer expr)
-        $ evalLTL expr
-    where expr = Atom even `Or` Atom (>(1::Int))
-
-
 testTransducer :: (Show a, Arbitrary a) => TPred a -> Property
-testTransducer expr =
-    forAll
-        (trans $ mkTransducer expr)
-        $ evalLTL expr
+testTransducer expr = forAll (trans $ mkTransducer expr) $ evalLTL expr
 
-prop_mkAcceptor_5 :: Property
-prop_mkAcceptor_5 =
+prop_mkAcceptor_Always_acceptedByEval :: Property
+prop_mkAcceptor_Always_acceptedByEval =
    testTransducer $ Always (Atom (>(1::Int)))
 
-prop_mkAcceptor_6 :: Property
-prop_mkAcceptor_6 =
+prop_mkAcceptor_Until_acceptedByEval :: Property
+prop_mkAcceptor_Until_acceptedByEval =
    testTransducer $ Atom (>(1::Int)) `Until` Atom (<(-1))
 
-prop_mkAcceptor_7 :: Property
-prop_mkAcceptor_7 = testTransducer $ Not $ Atom (==(0::Int))
+prop_mkAcceptor_Not_acceptedByEval :: Property
+prop_mkAcceptor_Not_acceptedByEval = testTransducer $ Not $ Atom (==(0::Int))
 
-prop_mkAcceptor_8 :: Property
-prop_mkAcceptor_8 =
+prop_mkAcceptor_Or_acceptedByEval :: Property
+prop_mkAcceptor_Or_acceptedByEval =
    testTransducer $ Atom (>(1::Int)) `Or` Atom (<(-1))
 
+prop_mkAcceptor_And_acceptedByEval :: Property
+prop_mkAcceptor_And_acceptedByEval =
+   testTransducer $ Atom (>(1::Int)) `And` Atom even
+
+transducer_nElements_limit n =
+   testTransducer $ Atom (\x -> x >= base && x < (base + n))
+   where base = 1::Int
+   
+prop_transducer_1Elements_limit :: Property
+prop_transducer_1Elements_limit = transducer_nElements_limit 1
+prop_transducer_4Elements_limit :: Property
+prop_transducer_4Elements_limit = transducer_nElements_limit 4
+prop_transducer_16Elements_limit :: Property
+prop_transducer_16Elements_limit = transducer_nElements_limit 16
+prop_transducer_64Elements_limit :: Property
+prop_transducer_64Elements_limit = transducer_nElements_limit 64
+prop_transducer_128Elements_limit :: Property
+prop_transducer_128Elements_limit = transducer_nElements_limit 128
+
+transducerTest_Bool :: (Show a, Arbitrary a, Eq a) => a -> Property
+transducerTest_Bool expected = testTransducer $ Atom (expected ==)
+
+prop_transducerTest2 :: Property
+prop_transducerTest2 = transducerTest_Bool (True, False)
+prop_transducerTest4 :: Property
+prop_transducerTest4 = transducerTest_Bool (True, False, True, False)
+prop_transducerTest6 :: Property
+prop_transducerTest6 = transducerTest_Bool (True, False, True, False, True, False)
+prop_transducerTest8 :: Property
+prop_transducerTest8 = transducerTest_Bool (True, False, True, False, True, False, True, False)
+prop_transducerTest10 :: Property
+prop_transducerTest10 = transducerTest_Bool (True, False, True, False, True, False, True, False, True, False)
 
 reactToUser :: Str (Bool, Bool) -> Str Bool
 reactToUser _ = constStr True

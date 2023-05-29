@@ -137,13 +137,13 @@ negateA Accept = Reject
 negateA (NextA f) =  NextA (negateA . f)
 
 andA :: Acceptor a -> Acceptor a -> Acceptor a
-andA (NextA f1) (NextA f2) = NextA $ \x1 -> f1 x1 `andA` f2 x1
+andA (NextA f1) (NextA f2) = NextA (\x -> f1 x `andA` f2 x)
 andA Reject _ = Reject
 andA _ Reject = Reject
-andA Accept st = st
-andA st Accept = st
+andA Accept aNextA = aNextA
+andA aNextA Accept = aNextA
 
-restrictWith :: forall a.  Show a => Transducer a -> Acceptor a -> Transducer a
+restrictWith :: forall a. Show a => Transducer a -> Acceptor a -> Transducer a
 restrictWith _ Reject = rejectTransducer
 restrictWith aTransducer Accept = aTransducer
 restrictWith aTransducer (NextA someTest) = rwInner aTransducer someTest
@@ -157,7 +157,6 @@ rwInner (NextT gen) passTest = NextT $ loop (1000::Int) where
         case value of
             Nothing -> return Nothing
             Just (genVal, xGen) -> 
-                -- trace ("genVal: "++ show genVal) $
                 case passTest genVal of
                 Accept -> return $ Just (genVal, xGen)
                 Reject -> if n == 0 then return Nothing else loop (n - 1)
