@@ -12,7 +12,7 @@ import Data.Bits ((.|.))
 import Control.Monad (liftM2)
 import Rattus.Primitives (delay, adv)
 import Rattus.Stream (Str(..))
-import Rattus.Event (switch, Event)
+
 --- Acceptor modifiers ------------------------------------------------------------------------
 oddGen :: Gen Int
 oddGen = (.|.) 1 <$> arbitrary

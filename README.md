@@ -1,3 +1,4 @@
-# HaskellSandbox
-Here I will implement small snippets from Haskell.
+# QuickRat
+Property Based Testing of Functional Reactive Programs using Linear Temporal
+Logic
 

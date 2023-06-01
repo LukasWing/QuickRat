@@ -44,7 +44,6 @@ library
 executable HaskellSandbox-exe
   main-is: Main.hs
   other-modules:
-      PlayArea
       Paths_HaskellSandbox
   hs-source-dirs:
       app
